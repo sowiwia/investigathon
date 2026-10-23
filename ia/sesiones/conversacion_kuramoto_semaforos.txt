@@ -1,0 +1,204 @@
+CONVERSACIÓN: SEMÁFOROS COMO OSCILADORES DE FASE (KURAMOTO)
+
+YO:
+este es un paper en japonés: Nishikawa, Nakazawa y Kita, "Area-wide Control
+of Traffic Signals by a Phase Model", Transactions of SICE, vol. 39, n.º 2
+(2003). traducilo al inglés en un PDF en formato latex, con la mayor fidelidad
+posible, ecuaciones, tablas y figuras incluidas.
+
+CLAUDE:
+Listo. Te paso dos archivos: el PDF compilado
+(Nishikawa2003_PhaseModel_EN.pdf, 19 páginas) y un .zip con el .tex y las
+figuras, por si querés editarlo.
+
+Qué incluye:
+- El texto completo: secciones 1 a 6, agradecimientos, las 20 referencias y
+  las biografías de los autores.
+- Las 24 ecuaciones reescritas en LaTeX a partir de la imagen del original,
+  con la misma numeración. El texto extraíble del PDF tenía las fórmulas
+  rotas, así que no lo usé para ellas.
+- Las 2 tablas rearmadas con sus valores exactos, incluidos los subrayados
+  de la Tabla 2.
+- Las 8 figuras recortadas del escaneo original. Sus etiquetas ya estaban en
+  inglés y las dejé como estaban.
+
+Criterios que usé:
+- Terminología fija: 現示 = "indication" (para no confundirlo con la fase
+  del oscilador), 流量 = "flow", 同時型/交互型 = "simultaneous/alternate
+  type", 主道路/従道路 = "main/secondary road".
+- En la referencia 5 el escaneo dice 参沢, pero lo transcribí "Ajisawa"
+  porque parece una errata de 鯵沢.
+- En la referencia 7 dejé "D-166" como está impreso, aunque probablemente
+  sea D-116.
+
+Lo armé a una columna. Si lo querés a dos columnas como el original, lo
+cambio.
+
+YO:
+antes de hablar de semáforos quiero entender el fenómeno en general.
+dónde aparece la sincronización tipo kuramoto en la vida real? es algo común?
+
+CLAUDE:
+Es muy común. El modelo de Kuramoto es una idealización de algo que aparece
+cada vez que hay muchos osciladores con ritmos parecidos que se influyen
+entre sí. Algunos ejemplos conocidos:
+
+- Luciérnagas: en el Sudeste Asiático hay especies (Pteroptyx) en las que
+  miles de machos de un mismo árbol terminan destellando al unísono. Cada
+  una ajusta su ritmo según los destellos que ve.
+- Corazón: las células marcapasos del nodo sinoauricular tienen frecuencias
+  propias algo distintas, pero se acoplan y disparan juntas. De eso depende
+  el latido.
+- Aplausos: en un teatro, el aplauso desordenado a veces se vuelve rítmico
+  y sincronizado. Néda y colaboradores lo midieron y lo publicaron en
+  Nature en 2000.
+- Puente del Milenio (Londres, 2000): el puente oscilaba de costado, los
+  peatones ajustaban el paso para compensar y eso, a su vez, amplificaba la
+  oscilación. Una vez que pasó un número crítico de personas, apareció la
+  sincronización de golpe. Strogatz y otros lo modelaron con un esquema
+  tipo Kuramoto (Nature, 2005).
+- Red eléctrica: todos los generadores de un sistema interconectado tienen
+  que girar sincronizados a la frecuencia de red (50 Hz en Argentina). La
+  estabilidad de la red se estudia con modelos que son primos directos del
+  de Kuramoto.
+- Metrónomos sobre una tabla que puede moverse: arrancan desfasados y al
+  rato quedan en fase. Es un experimento clásico.
+- También aparece en neuronas, ritmos circadianos y el canto de los grillos.
+
+La idea del modelo es simple. Cada oscilador tiene su frecuencia natural
+w_i y lo "tironean" los demás según la diferencia de fase:
+
+  dtheta_i/dt = w_i + (K/N) * sum_j sin(theta_j - theta_i)
+
+Si el acople K es chico, cada uno sigue con su ritmo. Cuando K pasa un
+valor crítico, aparece un grupo sincronizado que va creciendo. Ese grado de
+sincronización se mide con el parámetro de orden r, que va de 0 (desorden)
+a 1 (todos en fase). Es una transición de fase, como la magnetización.
+
+
+YO:
+entonces se puede explorar un modelo de Kuramoto con desfases aplicado a una red de semáforos y al tránsito? La idea sería ver
+qué patrones de offsets aparecen y cómo cambian si cambian los flujos.
+
+CLAUDE:
+Sí, y en el fondo es lo que hace el paper, solo que con una vuelta respecto
+del Kuramoto clásico. Hay tres diferencias importantes:
+
+1. Los semáforos no tienen frecuencias distintas: comparten el ciclo T, así
+   que w es igual para todos. Lo que interesa no es si se sincronizan sino
+   con qué desfase quedan.
+2. El término de acople tiene un desfase, como en el modelo de
+   Sakaguchi-Kuramoto (1986): sin(phi_j - phi_i - Delta_ji). Ese Delta_ji es
+   el offset ideal para la "onda verde" entre dos cruces vecinos:
+   Delta_ji = 2*pi*L_ji/(T*v), es decir, el tiempo que tarda un auto en
+   recorrer la cuadra, expresado como fracción del ciclo.
+3. El peso de cada enlace es el flujo vehicular K_ji. Así, el tramo con
+   más tránsito "tira más fuerte" y queda más cerca de su offset ideal.
+
+Lo interesante para explorar es la frustración. En una red con ciclos (una
+manzana, por ejemplo), no siempre se pueden cumplir todos los offsets
+ideales a la vez: si la suma de los Delta alrededor del ciclo no da un
+múltiplo de 2*pi, algún tramo tiene que ceder. El sistema encuentra solo un
+compromiso, ponderado por los flujos, sin que nadie tenga que resolver un
+problema de optimización global.
+
+Cosas concretas que se pueden estudiar:
+- Multiestabilidad: según las condiciones iniciales, pueden aparecer
+  distintos patrones estables. El paper lo ve en la red de 2x2.
+- Unidireccional vs. bidireccional: la versión bidireccional es un sistema
+  potencial y converge siempre. La unidireccional puede no converger en
+  redes más grandes; el paper menciona oscilaciones en una red de 3x3.
+- Flujos que cambian en el tiempo (hora pico vs. valle): ver cuánto tarda
+  la red en reacomodar los offsets y si lo hace de forma suave.
+- Calles de una mano y giros: el paper ya tiene las extensiones.
+
+Para arrancar, lo más sano es implementar en Python la ecuación (9) u (11)
+del paper, integrarla con scipy y reproducir la Tabla 1 (red de 2x2,
+Delta = 3*pi/8 y 5*pi/8). Si eso da igual que el paper, el código está
+validado y se puede escalar.
+
+
+YO:
+mi idea es usar datos públicos de la ciudad de bs as para alimentar
+las simulaciones, los flujos para estimar los acoples y las distancias
+reales entre cruces para los delta. es viable? qué datos hay?
+
+CLAUDE:
+Es viable, con algunas limitaciones. Esto es lo que hay:
+
+- BA Data (data.buenosaires.gob.ar), organización "Transporte y Obras
+  Públicas". El dataset más útil es "Volumen Vehicular": flujo detectado por
+  los sensores de la Ciudad, con fecha, ubicación, tipo de vía y cantidad de
+  vehículos (hay base anual 2024). De ahí salen los K_ji.
+- Flujo vehicular en los peajes y cámaras de AUSA. Sirve para las
+  autopistas, aunque ahí no hay semáforos.
+- OpenStreetMap para la geometría de la red: cruces, sentidos de
+  circulación y distancias L_ji.
+
+Para hacerse una idea del orden de magnitud: en el damero porteño una
+cuadra tiene unos 100 m. Con v = 40 km/h (unos 11 m/s) se tarda unos 9 s
+en recorrerla, y con un ciclo de T = 90 s eso da Delta ≈ 0,2*pi. Ese valor
+está en la zona del tipo "simultáneo" del paper (|Delta| < pi/2).
+
+Además, CABA tiene muchísimas calles de una mano, que es justo el caso en
+el que el paper muestra más diferencia entre las dos variantes de acople.
+
+Limitaciones a tener en cuenta:
+- Los sensores no están en todos los cruces, así que hay que elegir un
+  corredor o una zona chica con buena cobertura.
+- No hay datos de cuántos autos doblan en cada esquina; habría que
+  suponerlos o estimarlos.
+- No encontré un dataset público con la programación real de los semáforos
+  (ciclos, splits, offsets). Si no está publicado, se puede pedir por
+  acceso a la información pública. Tenerlo serviría para comparar lo que
+  propone el modelo con lo que hay hoy.
+
+Plan posible: elegir un tramo de avenida con sensores, armar el grafo con
+OSM, estimar K_ji y Delta_ji, correr el modelo y comparar los offsets que
+emergen con los fijos (todos en fase, alternados). Más adelante, se podría
+medir el tiempo de viaje con un microsimulador abierto como SUMO, que
+cumpliría el papel de MELROSE en el paper.
+
+
+YO:
+puedes buscar exhaustivamente bibliografía que vincule el modelo de Kuramoto (osciladores de
+fase acoplados) con el control de semáforos? solo los que usen kuramoto para semáforos.
+
+CLAUDE:
+Es una línea de investigación bastante chica: hay pocos trabajos que
+modelen directamente los semáforos como osciladores de Kuramoto. Estos son
+los principales:
+
+- S. Lämmer, H. Kori, K. Peters y D. Helbing, "Decentralised control of
+  material or traffic flows in networks using phase-synchronisation",
+  Physica A 363(1), 39-47 (2006); arXiv: physics/0603259. Es la referencia
+  más citada del tema. Cada intersección es un oscilador de fase y la
+  coordinación de la red surge de la sincronización, sin control central.
+- R. Donner, "Multivariate analysis of spatially heterogeneous phase
+  synchronisation in complex systems: application to self-organised control
+  of material flows in networks", European Physical Journal B 63(3),
+  349-361 (2008). Analiza qué tan sincronizada queda una red de semáforos
+  controlada así. Muestra que la heterogeneidad espacial reduce la
+  sincronización y, con ella, el rendimiento de la red.
+- I. Nishikawa, S. Nakazawa y H. Kita, "Area-wide Control of Traffic Signals
+  by a Phase Model", Trans. SICE 39(2), 199-208 (2003). Es el que
+  tradujimos: Kuramoto con desfase en el acople (el offset objetivo) y
+  pesos dados por los flujos.
+- I. Nishikawa, T. Iritani, K. Sakakibara y Y. Kuroe, "Phase Synchronization
+  in Phase Oscillators and a Complex-Valued Neural Network and Its
+  Applications to Traffic Flow Control", Progress of Theoretical Physics
+  Supplement 161, 302-305 (2006). Es la continuación del anterior, en
+  inglés. Compara los osciladores de fase con una red neuronal compleja y
+  encuentra que, en redes grandes, los osciladores a veces no convergen.
+- M. Sugi, H. Yuasa, J. Ota y T. Arai, "Autonomous Distributed Control of
+  Traffic Signals with Cycle Length Control", Trans. SICE E-3(1), 8-18
+  (2004). Los semáforos son osciladores acoplados en el grafo de calles;
+  ajustan offsets, splits y también la duración del ciclo.
+- A. Akbas y M. Ergun, "Dynamic traffic signal control using a nonlinear
+  coupled oscillators approach", Canadian Journal of Civil Engineering
+  32(2), 430-441 (2005). Aplica osciladores acoplados a los semáforos de una
+  avenida de doble mano, con datos de tránsito en tiempo real.
+
+Si querés ir más profundo, hay más material en actas de congresos japoneses
+(Sekiyama et al., la serie completa de Sugi et al.), al que se llega desde
+las referencias de estos trabajos.
