@@ -1,0 +1,47 @@
+orden,calle_recorrido,cruce_con,lat,lon,distancia_desde_inicio_m,distancia_al_anterior_m
+1,Av. Entre Ríos,Avenida Independencia,-34.618148,-58.391692,0,
+2,Av. Entre Ríos,Chile,-34.616867,-58.391678,121,121
+3,Av. Entre Ríos,México,-34.61569,-58.39166,252,131
+4,Av. Entre Ríos,Venezuela,-34.614899,-58.391677,340,88
+5,Av. Belgrano,Avenida Entre Ríos,-34.613808,-58.391723,461,122
+6,Av. Belgrano,Solís,-34.613716,-58.390365,586,125
+7,Av. Belgrano,Virrey Cevallos,-34.613619,-58.388961,715,129
+8,Av. Belgrano,(sin calle transversal en OSM: probable semáforo peatonal),-34.613587,-58.388498,758,43
+9,Av. Belgrano,Presidente Luis Sáenz Peña,-34.613524,-58.387521,847,90
+10,Av. Belgrano,San José,-34.613428,-58.386082,980,132
+11,Av. Belgrano,Santiago del Estero,-34.613319,-58.384657,1111,131
+12,Av. Belgrano,Salta,-34.613211,-58.383226,1242,132
+13,Av. Belgrano,Lima,-34.613119,-58.381747,1378,136
+14,Av. Belgrano,Avenida 9 de Julio,-34.61309,-58.38136,1414,36
+15,Av. Belgrano,Avenida 9 de Julio,-34.613056,-58.380892,1457,43
+16,Av. Belgrano,Bernardo de Irigoyen,-34.61303,-58.380487,1494,37
+17,Av. Belgrano,Tacuarí,-34.612938,-58.37903,1628,134
+18,Av. Belgrano,Avenida Presidente Julio A. Roca / Piedras,-34.61287,-58.377605,1759,131
+19,Av. Belgrano,Chacabuco,-34.612754,-58.376163,1892,133
+20,Av. Belgrano,Perú,-34.612645,-58.374707,2026,134
+21,Av. Belgrano,Bolívar,-34.612536,-58.373318,2154,128
+22,Av. Belgrano,Defensa,-34.612452,-58.371918,2282,129
+23,Av. Belgrano,Balcarce,-34.612373,-58.370567,2406,124
+24,Av. Paseo Colón,Avenida Belgrano,-34.612328,-58.369547,2500,94
+25,Av. Paseo Colón,Metrobus del Bajo,-34.613443,-58.369333,2625,125
+26,Av. Paseo Colón,México,-34.614782,-58.369468,2773,149
+27,Av. Paseo Colón,Chile,-34.615818,-58.36946,2889,115
+28,Av. Paseo Colón,Avenida Independencia / Metrobus del Bajo,-34.616965,-58.369434,3016,128
+29,Av. Independencia,Balcarce,-34.617143,-58.36987,3073,57
+30,Av. Independencia,Defensa,-34.617187,-58.371673,3239,165
+31,Av. Independencia,Bolívar,-34.617165,-58.373087,3368,130
+32,Av. Independencia,Perú,-34.617243,-58.37445,3494,125
+33,Av. Independencia,Chacabuco,-34.617346,-58.375918,3628,135
+34,Av. Independencia,Piedras,-34.617445,-58.377367,3762,133
+35,Av. Independencia,Tacuarí,-34.617536,-58.378776,3891,129
+36,Av. Independencia,Bernardo de Irigoyen,-34.617628,-58.380264,4028,137
+37,Av. Independencia,Avenida 9 de Julio / Metrobús 9 de Julio (Norte) / Metrobús 9 de Julio (Sur),-34.617627,-58.380676,4066,38
+38,Av. Independencia,Avenida 9 de Julio,-34.617635,-58.381128,4107,41
+39,Av. Independencia,(sin calle transversal en OSM: probable semáforo peatonal),-34.617659,-58.381921,4180,73
+40,Av. Independencia,Salta,-34.617727,-58.383019,4281,101
+41,Av. Independencia,Santiago del Estero,-34.617779,-58.38431,4399,118
+42,Av. Independencia,San José,-34.617837,-58.385875,4543,144
+43,Av. Independencia,Presidente Luis Sáenz Peña,-34.617899,-58.387467,4689,146
+44,Av. Independencia,Virrey Cevallos,-34.617993,-58.388978,4827,139
+45,Av. Independencia,Solís,-34.618072,-58.390332,4952,124
+46,Av. Independencia,Avenida Entre Ríos (vuelta al inicio),-34.618148,-58.391692,5059,107
