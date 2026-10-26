@@ -1,0 +1,259 @@
+@font-face { font-family: 'Monocraft'; src: url('../assets/fuentes/Monocraft.ttf'); }
+@font-face { font-family: 'Monocraft'; src: url('../assets/fuentes/Monocraft-Bold.ttf'); font-weight: bold; }
+
+:root {
+  --fondo: #14162a;
+  --texto: #eceaf6;
+  --atenuado: #9a9fc3;
+  --sombra: #07080f;
+  --celeste: #75aadb;
+  --amarillo: #ffd36b;
+  --lejos: #f5a623;
+  --cumplido: #4fc3f7;
+  --losa: #2a2d4a;
+  --luz: #4a4f78;
+  --oscuro: #0d0e1c;
+  --verde: #3fd47a;
+  --verdeApagado: #1d5a35;
+  --rojo: #f0525a;
+  --rojoApagado: #5a2129;
+}
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--fondo);
+  color: var(--texto);
+  font-family: 'Monocraft', monospace;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+.boton {
+  background: var(--losa);
+  border: 3px solid;
+  border-color: var(--luz) var(--oscuro) var(--oscuro) var(--luz);
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.boton:active,
+.boton.activo {
+  border-color: var(--oscuro) var(--luz) var(--luz) var(--oscuro);
+}
+
+/* Pantalla de juego */
+
+#juego {
+  position: fixed;
+  inset: 0;
+}
+
+#lienzo canvas {
+  display: block;
+}
+
+.arriba,
+.costado,
+.nombreHerramienta {
+  text-shadow: 2px 2px 0 var(--sombra);
+  pointer-events: none;
+}
+
+.arriba {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 14px 20px 26px;
+  background: linear-gradient(var(--fondo) 30%, transparent);
+  display: flex;
+  align-items: baseline;
+  gap: 30px;
+}
+
+.titulo {
+  font-size: 20px;
+  font-weight: bold;
+  margin-right: auto;
+}
+
+.indicador {
+  font-size: 18px;
+  white-space: nowrap;
+}
+
+.indicador small {
+  font-size: 11px;
+  color: var(--atenuado);
+  margin-left: 6px;
+}
+
+.costado {
+  position: absolute;
+  top: 76px;
+  right: 20px;
+  width: 230px;
+  display: grid;
+  gap: 14px;
+}
+
+.costado .boton,
+.costado input {
+  pointer-events: auto;
+}
+
+.zoom {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.zoom .boton {
+  padding: 2px 10px;
+}
+
+.control {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.control .fila {
+  display: flex;
+  justify-content: space-between;
+}
+
+.control .valor {
+  color: var(--atenuado);
+}
+
+.botones {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.botones .boton {
+  font-size: 13px;
+}
+
+/* Deslizador pixel: riel hundido y perilla cuadrada */
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 22px;
+  margin: 0;
+  background: transparent;
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+  height: 6px;
+  background: var(--oscuro);
+  border-top: 2px solid #000;
+  border-bottom: 2px solid var(--luz);
+}
+
+input[type=range]::-moz-range-track {
+  height: 6px;
+  background: var(--oscuro);
+  border-top: 2px solid #000;
+  border-bottom: 2px solid var(--luz);
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 18px;
+  margin-top: -8px;
+  background: var(--texto);
+  border: 0;
+  border-bottom: 3px solid #8a8fb3;
+  border-radius: 0;
+}
+
+input[type=range]::-moz-range-thumb {
+  width: 12px;
+  height: 15px;
+  background: var(--texto);
+  border: 0;
+  border-bottom: 3px solid #8a8fb3;
+  border-radius: 0;
+}
+
+.nombreHerramienta {
+  position: absolute;
+  bottom: 92px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* los escenarios van uno abajo del otro, porque sus nombres son largos */
+.botones.columna {
+  grid-template-columns: 1fr;
+}
+
+.botones.columna .boton {
+  text-align: left;
+}
+
+/* cuando el dedo está sobre una calle, el cartel dice cuál es */
+.nombreHerramienta.senalando {
+  color: var(--amarillo);
+}
+
+.barra {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--oscuro);
+  border: 3px solid #000;
+}
+
+.ranura {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  padding: 0;
+  background: var(--losa);
+  border: 3px solid;
+  border-color: var(--oscuro) var(--luz) var(--luz) var(--oscuro);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.ranura.elegida {
+  outline: 3px solid var(--texto);
+  z-index: 1;
+}
+
+.ranura canvas {
+  width: 27px;
+  height: 27px;
+  image-rendering: pixelated;
+}
+
+.ranura .tecla {
+  position: absolute;
+  top: 1px;
+  left: 3px;
+  font-size: 9px;
+  color: var(--atenuado);
+}

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sincronización Porteña</title>
+  <link rel="stylesheet" href="css/estilo.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+</head>
+<body>
+  <main id="juego">
+    <div id="lienzo"></div>
+
+    <header class="arriba">
+      <div class="titulo">Sincronización Porteña</div>
+      <div class="indicador"><span id="valorV">0.00</span><small>Potencial V</small></div>
+      <div class="indicador"><span id="valorTiempo">0 s</span><small>Tiempo</small></div>
+    </header>
+
+    <aside class="costado">
+      <div class="zoom">Zoom <button class="boton" id="menosZoom">−</button> <span id="valorZoom">×2</span> <button class="boton" id="masZoom">+</button></div>
+      <label class="control">
+        <span class="fila"><span>Animación</span><span class="valor" id="valorAnimacion">×10</span></span>
+        <input type="range" id="deslizadorAnimacion" min="1" max="30" step="1" value="10">
+      </label>
+      <label class="control">
+        <span class="fila"><span>Acople K</span><span class="valor" id="valorAcople">×1.0</span></span>
+        <input type="range" id="deslizadorAcople" min="-8" max="12" step="1" value="0">
+      </label>
+      <div class="control">
+        <span class="fila"><span>Ciclo T</span><span class="valor" id="valorT">90 s</span></span>
+        <span class="fila"><span>Desfase Δ por cuadra</span><span class="valor" id="valorDelta">0.82 rad</span></span>
+      </div>
+      <div class="botones">
+        <button class="boton" id="botonDeltaCero">Δ = 0</button>
+        <button class="boton" id="botonMezclar">Mezclar</button>
+      </div>
+      <div class="control">
+        <span class="fila"><span>Escenarios</span></span>
+        <div class="botones columna" id="escenarios"></div>
+      </div>
+    </aside>
+
+    <div class="nombreHerramienta" id="nombreHerramienta"></div>
+    <nav class="barra" id="barra"></nav>
+  </main>
+
+  <script src="js/modelo.js"></script>
+  <script src="js/calles.js"></script>
+  <script src="js/escenarios.js"></script>
+  <script src="js/plano.js"></script>
+  <script src="js/paleta.js"></script>
+  <script src="js/dibujo.js"></script>
+  <script src="js/gestos.js"></script>
+  <script src="js/principal.js"></script>
+</body>
+</html>
