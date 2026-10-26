@@ -68,11 +68,13 @@ function puntoSobreCuadra(calle, avance, haciaB) {
   return { x: x1 + (x2 - x1) * t, y: y1 + (y2 - y1) * t, ux: (x2 - x1) / largo, uy: (y2 - y1) / largo };
 }
 
-// Dónde frena el que llega al cruce por esta cuadra: diez metros antes de la esquina.
+// Dónde frena el que llega al cruce por esta cuadra, en metros desde el arranque: diez metros antes
+// de la esquina, pero nunca más atrás del 40 % de la cuadra, porque en el Microcentro hay cuadras
+// de once metros.
 const metrosAntesDelCruce = 10;
 
 function lineaDeFrenado(cuadra) {
-  return cuadra.largo - metrosAntesDelCruce;
+  return Math.max(cuadra.largo * 0.4, cuadra.largo - metrosAntesDelCruce);
 }
 
 // El punto del eje donde frena quien llega a esa esquina, con la dirección en la que viene.
