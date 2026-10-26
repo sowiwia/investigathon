@@ -236,6 +236,39 @@ QUnit.module('indicadores', () => {
     assert.true(flujoCumplido([0.05, vuelta - 0.9], red, 0, 1, 0.1), 'funciona al cruzar 2π');
   });
 
+  QUnit.test('escala de acople: el K más grande de la red', assert => {
+    const red = redVacia(3);
+    conectar(red, 0, 1, 0.2, 0, 1);
+    conectar(red, 1, 2, 0.05, 0.5, 1);
+    assert.strictEqual(escalaDeAcople(red), 0.5, 'mira los dos sentidos de cada calle');
+    assert.strictEqual(escalaDeAcople(redVacia(3)), 1, 'una red sin calles no divide por cero');
+  });
+
+  // Midiendo el equilibrio contra la escala de acople, el doble de K tiene que ordenar la red en la
+  // mitad de tiempo. Con tolerancia fija no pasaba, porque dφ/dt − ω crece con K.
+  QUnit.test('con el doble de acople la red se ordena en la mitad de tiempo', assert => {
+    const tolEq = 0.005;
+    const tardanza = factor => {
+      const red = serie(6, Math.PI / 4, false);
+      for (let i = 0; i < 6; i++) {
+        for (const j of red.vecinos[i]) red.K[j][i] *= factor;
+      }
+      const tol = tolEq * escalaDeAcople(red);
+      let fases = [0, 2, 4, 1, 5, 3];
+      let pasos = 0;
+      while (pasos < 400000 && !convergio(fases, red, omega, tol)) {
+        fases = simular(fases, red, omega, dt, 100);
+        pasos += 100;
+      }
+      return pasos;
+    };
+    const flojo = tardanza(1);
+    const fuerte = tardanza(2);
+    assert.ok(flojo > 0 && fuerte > 0, `tardó ${flojo} y ${fuerte} pasos`);
+    const razon = flojo / fuerte;
+    assert.ok(razon > 1.7 && razon < 2.3, `el doble de acople tardó ${razon.toFixed(2)}× menos`);
+  });
+
   QUnit.test('convergencia', assert => {
     const red = serie(5, Math.PI / 4, true);
     assert.false(convergio(fasesSerie5, red, omega, 0.001), 'al principio no');

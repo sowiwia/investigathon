@@ -6,6 +6,9 @@ const pasosMaximosPorCuadro = 300;
 // que la distancia entre autos y se vería a saltos.
 const segundosPorTramoDeAutos = 0.25;
 const tolCumplido = 0.1;
+// Error de fase que se tolera para dar la red por equilibrada, medido contra el acople
+// (ver escalaDeAcople en modelo.js).
+const tolEquilibrio = 0.005;
 
 // T lo fija cada escenario y v es la velocidad de marcha de siempre: los dos entran en
 // Δ = 2πL/(vT) y se muestran como lectura en vez de dejarlos a mano.
@@ -38,6 +41,7 @@ let redActual = armarRed(plano, parametros);
 let fases = [];
 let autos = [];
 let tiempo = 0;
+let sincronizoEn = null;  // cuánto tardó la red en llegar al equilibrio, en segundos simulados
 let jugando = true;
 
 let mapa;
@@ -136,6 +140,7 @@ function alCambiarElPlano() {
   rearmarRed();
   limpiarSeries(plano);
   invalidarCiudad();
+  sincronizoEn = null;
 }
 
 function mezclarFases() {
@@ -143,8 +148,10 @@ function mezclarFases() {
   reiniciarReloj();
 }
 
+// El cronómetro de sincronización arranca de nuevo cada vez que cambia algo que mueve el equilibrio.
 function reiniciarReloj() {
   tiempo = 0;
+  sincronizoEn = null;
   reiniciarMuestras();
 }
 
@@ -176,8 +183,23 @@ function elegirTransito(clave) {
 }
 
 function actualizarIndicadores() {
+  const hayEsquinas = plano.esquinas.length > 0;
+
   document.getElementById('valorV').textContent = potencial(fases, redActual).toFixed(2);
   document.getElementById('valorTiempo').textContent = `${Math.floor(tiempo)} s`;
+
+  const estado = document.getElementById('estado');
+  const enEquilibrio = hayEsquinas &&
+    convergio(fases, redActual, vuelta / parametros.T, tolEquilibrio * escalaDeAcople(redActual));
+  if (enEquilibrio && sincronizoEn === null) {
+    sincronizoEn = tiempo;
+    marcarSincronizacion(tiempo);
+  }
+  document.getElementById('valorSincro').textContent = sincronizoEn === null
+    ? '–'
+    : `${Math.round(sincronizoEn)} s · ${(sincronizoEn / parametros.T).toFixed(1)} ciclos`;
+  estado.textContent = !hayEsquinas ? 'Sin semáforos' : enEquilibrio ? 'En equilibrio' : 'Ordenándose';
+  estado.classList.toggle('equilibrio', enEquilibrio);
 }
 
 // Herramientas. Reciben posiciones de la pantalla; gestos.js decide si fue un toque o un arrastre.

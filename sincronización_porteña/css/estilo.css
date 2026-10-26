@@ -97,6 +97,16 @@ button {
   margin-left: 6px;
 }
 
+.estado {
+  font-size: 12px;
+  color: var(--lejos);
+  white-space: nowrap;
+}
+
+.estado.equilibrio {
+  color: var(--cumplido);
+}
+
 .costado {
   position: absolute;
   top: 76px;

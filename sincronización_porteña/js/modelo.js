@@ -82,6 +82,17 @@ function dobleManoEnOptimo(fases, red, a, b, tol) {
   return Math.abs(wrap(fases[b] - fases[a] - optimo)) < tol;
 }
 
+// Cuánto pesa el acople más fuerte de la red. Sirve para medir el equilibrio contra K: las
+// velocidades se apartan de ω en proporción al acople, así que una tolerancia fija sería más
+// exigente con K grande y la red parecería tardar siempre lo mismo.
+function escalaDeAcople(red) {
+  let mayor = 0;
+  for (let i = 0; i < red.vecinos.length; i++) {
+    for (const j of red.vecinos[i]) mayor = Math.max(mayor, red.K[j][i], red.K[i][j]);
+  }
+  return mayor || 1;
+}
+
 // La red está en equilibrio cuando ninguna fase se aparta de ω más que tol.
 function convergio(fases, red, omega, tol) {
   return derivadas(fases, red, omega).every(velocidad => Math.abs(velocidad - omega) < tol);
