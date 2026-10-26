@@ -1,0 +1,264 @@
+// Dibujo del mundo en una capa de 1280x720: el mapa de 640x360 ampliado x2 y, encima, las calles
+// reales con sus semáforos.
+//
+// La ciudad entera se dibuja una sola vez en una capa aparte y se rehace solo cuando cambia la red,
+// porque son cientos de cuadras. Lo que cambia en cada cuadro (ejes de color, semáforos y el
+// resalte) va directo sobre el mundo.
+
+const anchoMundo = 1280;
+const altoMundo = 720;
+
+let capaCiudad;
+let ciudadAlDia = false;
+
+function invalidarCiudad() {
+  ciudadAlDia = false;
+}
+
+// Pinta una franja de 2·medio+1 píxeles de ancho a lo largo del tramo p→q.
+// salteo > 1 la hace punteada: salteo píxeles pintados y salteo apagados.
+function banda(capa, p, q, medio, salteo = 1, desfase = 0) {
+  const largo = Math.hypot(q[0] - p[0], q[1] - p[1]);
+  if (largo < 0.01) return;
+  const ux = (q[0] - p[0]) / largo;
+  const uy = (q[1] - p[1]) / largo;
+  const nx = -uy;
+  const ny = ux;
+  for (let i = 0; i <= largo; i++) {
+    if (salteo > 1 && Math.floor((i + desfase) / salteo) % 2) continue;
+    const cx = p[0] + ux * i;
+    const cy = p[1] + uy * i;
+    for (let d = -medio; d <= medio; d++) {
+      capa.rect(Math.round(cx + nx * d), Math.round(cy + ny * d), 1, 1);
+    }
+  }
+}
+
+// Solo los dos bordes del tramo, para resaltar sin tapar lo que hay abajo.
+function contorno(capa, p, q, medio) {
+  const largo = Math.hypot(q[0] - p[0], q[1] - p[1]);
+  if (largo < 0.01) return;
+  const ux = (q[0] - p[0]) / largo;
+  const uy = (q[1] - p[1]) / largo;
+  for (let i = 0; i <= largo; i++) {
+    const cx = p[0] + ux * i;
+    const cy = p[1] + uy * i;
+    capa.rect(Math.round(cx - uy * medio), Math.round(cy + ux * medio), 1, 1);
+    capa.rect(Math.round(cx + uy * medio), Math.round(cy - ux * medio), 1, 1);
+  }
+}
+
+function recorrer(puntos, fn) {
+  for (let i = 0; i < puntos.length - 1; i++) fn(puntos[i], puntos[i + 1], i);
+}
+
+function medioAncho(cuadra) {
+  return anchoDeCalzada(cuadra.clase) + (cuadra.clase === 'avenida' ? 1 : 0);
+}
+
+// Galones hacia donde van los autos: una punta de flecha de dos trazos, cada 36 px.
+function flechas(capa, puntos, medio) {
+  const alto = Math.min(3, Math.max(2, medio - 2));
+  let recorrido = 0;
+  recorrer(puntos, (p, q) => {
+    const largo = Math.hypot(q[0] - p[0], q[1] - p[1]);
+    if (largo < 0.01) return;
+    const ux = (q[0] - p[0]) / largo;
+    const uy = (q[1] - p[1]) / largo;
+    for (let t = ((-recorrido) % 36 + 36) % 36; t < largo; t += 36) {
+      const cx = p[0] + ux * t;
+      const cy = p[1] + uy * t;
+      // la punta va adelante y los dos trazos se abren hacia atrás
+      for (let d = 0; d <= alto; d++) {
+        const adelante = alto - d;
+        capa.rect(Math.round(cx + ux * adelante - uy * d), Math.round(cy + uy * adelante + ux * d), 1, 1);
+        capa.rect(Math.round(cx + ux * adelante + uy * d), Math.round(cy + uy * adelante - ux * d), 1, 1);
+      }
+    }
+    recorrido += largo;
+  });
+}
+
+// Hacia dónde circulan los autos de una calle de mano única.
+function puntosEnSentido(calle) {
+  const puntos = calle.cuadra.puntos;
+  return calle.deAaB ? puntos : [...puntos].reverse();
+}
+
+// Las cuadras que todavía no están en la red: un hilo tenue y punteado que muestra dónde se puede
+// dibujar.
+function dibujarFantasmas(capa, plano) {
+  capa.fill(paleta.fantasma);
+  for (const cuadra of ciudad.calles) {
+    if (plano.calles.some(c => c.cuadra === cuadra)) continue;
+    recorrer(cuadra.puntos, (p, q, i) => banda(capa, p, q, 0, 3, i * 5));
+  }
+}
+
+// Asfalto y cordón de una calle de la red.
+function dibujarCalzada(capa, calle) {
+  const medio = medioAncho(calle.cuadra);
+  const puntos = calle.cuadra.puntos;
+  capa.fill(paleta.cordon);
+  recorrer(puntos, (p, q) => banda(capa, p, q, medio + 1));
+  capa.fill(paleta.asfalto);
+  recorrer(puntos, (p, q) => banda(capa, p, q, medio));
+}
+
+// Eje de la calle: continuo si es mano única, punteado si es doble mano, y las flechas del sentido.
+function dibujarEje(capa, calle, color) {
+  capa.fill(color);
+  const unaMano = calle.deAaB !== calle.deBaA;
+  recorrer(calle.cuadra.puntos, (p, q, i) => banda(capa, p, q, 0, unaMano ? 1 : 5, i * 7));
+  if (unaMano) flechas(capa, puntosEnSentido(calle), medioAncho(calle.cuadra));
+}
+
+// La cuadra que está bajo el dedo y todavía no es de la red se muestra como quedaría al sumarla:
+// la calzada apagada y el eje punteado, para que se vea qué se va a dibujar antes de tocar.
+function dibujarPrevia(capa, cuadra) {
+  const medio = medioAncho(cuadra);
+  capa.fill(paleta.cordon);
+  recorrer(cuadra.puntos, (p, q) => banda(capa, p, q, medio + 1));
+  capa.fill(paleta.asfalto);
+  recorrer(cuadra.puntos, (p, q) => banda(capa, p, q, medio));
+  capa.fill(paleta.senalada);
+  recorrer(cuadra.puntos, (p, q, i) => banda(capa, p, q, 0, 3, i * 5));
+}
+
+// Cuánto ocupa el cruce: lo que mida la calle más ancha que llega.
+function radioDeCruce(plano, indice) {
+  let radio = 3;
+  for (const calle of plano.calles) {
+    if (calle.a === indice || calle.b === indice) {
+      radio = Math.max(radio, medioAncho(calle.cuadra) + 1);
+    }
+  }
+  return radio;
+}
+
+function dibujarCruce(capa, plano, indice) {
+  const { x, y } = plano.esquinas[indice];
+  const radio = radioDeCruce(plano, indice);
+  capa.fill(paleta.asfalto);
+  capa.rect(Math.round(x - radio), Math.round(y - radio), 2 * radio + 1, 2 * radio + 1);
+}
+
+// Un cabezal por calle que llega al cruce, parado en su línea de frenado y corrido a la derecha de
+// quien maneja, como en la calle: así se ve de una a qué calle le toca cada luz.
+function dibujarSemaforos(capa, plano, indice, fase, s, chicos) {
+  const esquina = plano.esquinas[indice];
+  const verdePrincipal = verdeEnPrincipal(fase, s);
+  if (chicos) {
+    // de lejos, un solo punto por cruce con el color de la principal
+    capa.fill(verdePrincipal ? paleta.verde : paleta.rojo);
+    capa.rect(Math.round(esquina.x) - 1, Math.round(esquina.y) - 1, 3, 3);
+    return;
+  }
+  for (const calle of plano.calles) {
+    if (calle.a !== indice && calle.b !== indice) continue;
+    // solo llevan semáforo las calles por las que llegan autos a este cruce
+    if (!hayFlujo(calle, calle.b === indice)) continue;
+    const parada = puntoDeParada(calle.cuadra, esquina.ciudad);
+    const costado = medioAncho(calle.cuadra) + 3;
+    const verde = rolDeCalle(plano, calle, indice) === 'principal' ? verdePrincipal : !verdePrincipal;
+    dibujarCabezal(capa,
+      Math.round(parada.x - parada.uy * costado),
+      Math.round(parada.y + parada.ux * costado), verde);
+  }
+}
+
+// Cabezal de 3x5: roja arriba y verde abajo, como un semáforo real.
+function dibujarCabezal(capa, x, y, verde) {
+  capa.fill(paleta.caja);
+  capa.rect(x - 1, y - 3, 3, 6);
+  capa.fill(verde ? paleta.rojoApagado : paleta.rojo);
+  capa.rect(x, y - 2, 1, 2);
+  capa.fill(verde ? paleta.verde : paleta.verdeApagado);
+  capa.rect(x, y, 1, 2);
+}
+
+// La escena trae el plano, la red, las fases, los parámetros, la tolerancia de flujo cumplido
+// y la cuadra que está bajo el dedo.
+function dibujarMundo(capa, mapa, escena) {
+  const { plano, red, fases, parametros, tol, señalada, zoom } = escena;
+  capa.noStroke();
+
+  if (!ciudadAlDia) {
+    capaCiudad.noStroke();
+    capaCiudad.image(mapa, 0, 0, anchoMundo, altoMundo);
+    dibujarFantasmas(capaCiudad, plano);
+    for (const calle of plano.calles) dibujarCalzada(capaCiudad, calle);
+    for (let i = 0; i < plano.esquinas.length; i++) dibujarCruce(capaCiudad, plano, i);
+    dibujarObelisco(capaCiudad);
+    ciudadAlDia = true;
+  }
+  capa.image(capaCiudad, 0, 0);
+
+  if (señalada) {
+    if (plano.calles.some(calle => calle.cuadra === señalada)) {
+      capa.fill(paleta.senalada);
+      recorrer(señalada.puntos, (p, q) => contorno(capa, p, q, medioAncho(señalada) + 2));
+    } else {
+      dibujarPrevia(capa, señalada);
+    }
+  }
+  for (const calle of plano.calles) {
+    dibujarEje(capa, calle, calleCumplida(calle, red, fases, tol) ? paleta.cumplido : paleta.lejos);
+  }
+  for (let i = 0; i < plano.esquinas.length; i++) {
+    dibujarSemaforos(capa, plano, i, fases[i], parametros.s, zoom < 2);
+  }
+}
+
+const obeliscoChico = [
+  '..sS..',
+  '..sS..',
+  '.ssSS.',
+  '.ssSS.',
+  '.ssSS.',
+  '.ssSS.',
+  '.ssSS.',
+  '.ssSS.',
+  '.ssSS.',
+  '.ssSS.',
+  'sssSSS',
+  'sssSSS',
+  'sssSSS',
+  'sssSSS',
+  'sssSSS',
+  'sssSSS',
+  'kkkkkk',
+];
+
+// Obelisco en miniatura, parado en la Plaza de la República: dos píxeles del mundo por píxel
+// del sprite.
+function dibujarObelisco(capa) {
+  const colores = { s: paleta.piedra, S: paleta.piedraSombra, k: paleta.caja };
+  obeliscoChico.forEach((fila, j) => {
+    [...fila].forEach((clave, i) => {
+      if (clave === '.') return;
+      capa.fill(colores[clave]);
+      capa.rect(634 + i * 2, 336 + j * 2, 2, 2);
+    });
+  });
+}
+
+// Íconos de 9x9 para la barra de herramientas.
+const iconos = {
+  calle: ['.........', '.........', 'ggggggggg', 'aaaaaaaaa', 'wwaawwaaw', 'aaaaaaaaa', 'ggggggggg', '.........', '.........'],
+  borrar: ['R.......R', '.R.....R.', '..R...R..', '...R.R...', '....R....', '...R.R...', '..R...R..', '.R.....R.', 'R.......R'],
+};
+
+const coloresDeIconos = { R: paleta.rojo, g: paleta.gris, a: paleta.asfalto, w: paleta.texto };
+
+// Pinta un ícono en un <canvas> de 9x9 (la hoja de estilos lo amplía sin suavizar).
+function pintarIcono(canvas, icono) {
+  const ctx = canvas.getContext('2d');
+  icono.forEach((fila, j) => {
+    [...fila].forEach((clave, i) => {
+      if (clave === '.') return;
+      ctx.fillStyle = coloresDeIconos[clave];
+      ctx.fillRect(i, j, 1, 1);
+    });
+  });
+}
