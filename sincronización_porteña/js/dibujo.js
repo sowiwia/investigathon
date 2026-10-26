@@ -1,8 +1,8 @@
 // Dibujo del mundo en una capa de 1280x720: el mapa de 640x360 ampliado x2 y, encima, las calles
-// reales con sus semáforos.
+// reales con sus semáforos y autos.
 //
 // La ciudad entera se dibuja una sola vez en una capa aparte y se rehace solo cuando cambia la red,
-// porque son cientos de cuadras. Lo que cambia en cada cuadro (ejes de color, semáforos y el
+// porque son cientos de cuadras. Lo que cambia en cada cuadro (ejes de color, semáforos, autos y el
 // resalte) va directo sobre el mundo.
 
 const anchoMundo = 1280;
@@ -177,10 +177,28 @@ function dibujarCabezal(capa, x, y, verde) {
   capa.rect(x, y, 1, 2);
 }
 
+// Autos de 4x3 por su carril, con mano derecha.
+function dibujarAutos(capa, autos) {
+  for (const auto of autos) {
+    const pos = posicionDeAuto(auto);
+    const lado = auto.carril < carrilesPorLado(auto.calle) ? 1 : -1;
+    const distancia = 1 + 2 * (auto.carril % carrilesPorLado(auto.calle));
+    const dx = -pos.uy * lado * distancia;
+    const dy = pos.ux * lado * distancia;
+    capa.fill(coloresDeAutos[Math.floor(auto.tono * coloresDeAutos.length)]);
+    // un auto mide unos 8 m de largo por 4 de ancho; en diagonal queda cuadrado
+    const derecho = Math.abs(pos.ux) > 2 * Math.abs(pos.uy);
+    const parado = Math.abs(pos.uy) > 2 * Math.abs(pos.ux);
+    const largo = derecho ? [2, 1] : parado ? [1, 2] : [1, 1];
+    capa.rect(Math.round(pos.x + dx - largo[0]), Math.round(pos.y + dy - largo[1]),
+      2 * largo[0], 2 * largo[1]);
+  }
+}
+
 // La escena trae el plano, la red, las fases, los parámetros, la tolerancia de flujo cumplido
 // y la cuadra que está bajo el dedo.
 function dibujarMundo(capa, mapa, escena) {
-  const { plano, red, fases, parametros, tol, señalada, zoom } = escena;
+  const { plano, red, fases, parametros, autos, tol, señalada, zoom } = escena;
   capa.noStroke();
 
   if (!ciudadAlDia) {
@@ -205,6 +223,7 @@ function dibujarMundo(capa, mapa, escena) {
   for (const calle of plano.calles) {
     dibujarEje(capa, calle, calleCumplida(calle, red, fases, tol) ? paleta.cumplido : paleta.lejos);
   }
+  dibujarAutos(capa, autos);
   for (let i = 0; i < plano.esquinas.length; i++) {
     dibujarSemaforos(capa, plano, i, fases[i], parametros.s, zoom < 2);
   }

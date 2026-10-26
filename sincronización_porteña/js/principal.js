@@ -1,6 +1,10 @@
 // Estado del juego, simulación, interfaz y herramientas.
 
 const pasosMaximosPorCuadro = 300;
+// Los autos se mueven en tramos cortos en vez de todos los segundos del cuadro de una vez: con la
+// animación rápida, o si el teléfono baja los cuadros por segundo, un solo salto saldría más largo
+// que la distancia entre autos y se vería a saltos.
+const segundosPorTramoDeAutos = 0.25;
 const tolCumplido = 0.1;
 
 // T lo fija cada escenario y v es la velocidad de marcha de siempre: los dos entran en
@@ -14,9 +18,11 @@ const parametros = {
   T: 90,
   s: 0.5,
   v: 40 / 3.6,
+  transito: 'medio',
   flujoCalle: 0.02,
   flujoAvenida: 0.2,
   acople: 1,
+  autosPorSegundo: nivelesDeTransito.medio.autosPorSegundo,
   deltaCero: false,
 };
 
@@ -30,6 +36,7 @@ let animacion = 10;
 let plano = crearPlano();
 let redActual = armarRed(plano, parametros);
 let fases = [];
+let autos = [];
 let tiempo = 0;
 let jugando = true;
 
@@ -79,7 +86,8 @@ function draw() {
   if (jugando) avanzar(Math.min(deltaTime, 100) / 1000 * animacion);
 
   dibujarMundo(mundo, mapa, {
-    plano, red: redActual, fases, parametros, tol: tolCumplido, señalada, zoom: vista.zoom,
+    plano, red: redActual, fases, parametros, autos,
+    tol: tolCumplido, señalada, zoom: vista.zoom,
   });
   background(paleta.fondo);
   image(mundo, Math.round(-vista.x * vista.zoom), Math.round(-vista.y * vista.zoom),
@@ -104,8 +112,13 @@ function windowResized() {
 function avanzar(segundos) {
   const dt = pasoDeIntegracion(parametros);
   const pasos = Math.min(Math.round(segundos / dt), pasosMaximosPorCuadro);
-  fases = simular(fases, redActual, vuelta / parametros.T, dt, pasos);
-  tiempo += pasos * dt;
+  const tramos = Math.max(1, Math.ceil(pasos * dt / segundosPorTramoDeAutos));
+  const pasosPorTramo = Math.floor(pasos / tramos);
+  for (let k = 0; k < tramos; k++) {
+    fases = simular(fases, redActual, vuelta / parametros.T, dt, pasosPorTramo);
+    autos = moverAutos(autos, plano, fases, parametros, pasosPorTramo * dt);
+  }
+  tiempo += tramos * pasosPorTramo * dt;
 }
 
 function rearmarRed() {
@@ -138,10 +151,21 @@ function aplicarEscenario(clave) {
   for (const cuadra of escenario.armar()) agregarCalle(plano, cuadra);
   parametros.T = escenario.T;
   document.getElementById('valorT').textContent = `${escenario.T} s`;
+  elegirTransito(escenario.transito);
   alCambiarElPlano();
   mezclarFases();
   for (const boton of document.querySelectorAll('#escenarios .boton')) {
     boton.classList.toggle('activo', boton.dataset.escenario === clave);
+  }
+}
+
+// Solo cambia cuántos autitos se ven: no toca el modelo, así que no rearma la red ni reinicia el
+// cronómetro de sincronización.
+function elegirTransito(clave) {
+  parametros.transito = clave;
+  parametros.autosPorSegundo = nivelesDeTransito[clave].autosPorSegundo;
+  for (const boton of document.querySelectorAll('#niveles .boton')) {
+    boton.classList.toggle('activo', boton.dataset.nivel === clave);
   }
 }
 
@@ -256,6 +280,17 @@ function prepararInterfaz() {
     reiniciarReloj();
   });
   document.getElementById('botonMezclar').addEventListener('click', mezclarFases);
+
+  const niveles = document.getElementById('niveles');
+  for (const [clave, nivel] of Object.entries(nivelesDeTransito)) {
+    const boton = document.createElement('button');
+    boton.className = 'boton';
+    boton.dataset.nivel = clave;
+    boton.textContent = nivel.nombre.replace('Tránsito ', '');
+    boton.title = nivel.nombre;
+    boton.addEventListener('click', () => elegirTransito(clave));
+    niveles.appendChild(boton);
+  }
 
   const lista = document.getElementById('escenarios');
   for (const [clave, escenario] of Object.entries(escenarios)) {

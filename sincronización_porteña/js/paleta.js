@@ -18,3 +18,5 @@ const paleta = {
   amarillo: '#ffd36b',
   gris: '#6d7192',
 };
+
+const coloresDeAutos = ['#ffd36b', '#e8e6f0', '#f0525a', '#9fd8ff', '#ffd36b', '#c8b6ff'];
