@@ -52,10 +52,16 @@ function preload() {
 }
 
 function setup() {
+  pixelDensity(1);
   const lienzo = createCanvas(windowWidth, windowHeight);
   lienzo.parent('lienzo');
+  noSmooth();
   mundo = createGraphics(anchoMundo, altoMundo);
+  mundo.pixelDensity(1);
+  mundo.noSmooth();
   capaCiudad = createGraphics(anchoMundo, altoMundo);
+  capaCiudad.pixelDensity(1);
+  capaCiudad.noSmooth();
 
   cargarCiudad(datosDeCalles);
   const largos = ciudad.calles.map(c => c.largo).sort((a, b) => a - b);

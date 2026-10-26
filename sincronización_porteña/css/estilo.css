@@ -58,6 +58,7 @@ button {
 
 #lienzo canvas {
   display: block;
+  image-rendering: pixelated;
 }
 
 .arriba,
