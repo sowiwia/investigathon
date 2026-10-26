@@ -45,10 +45,19 @@
       </div>
     </aside>
 
+    <div class="monitor">
+      <h3>Potencial V</h3>
+      <div class="lienzoGrafico"><canvas id="graficoV"></canvas></div>
+      <h3>Desfase φj − φi y su objetivo Δji</h3>
+      <div class="lienzoGrafico"><canvas id="graficoDesfases"></canvas></div>
+      <p class="pista" id="pistaDesfases">Elegí una calle con Graficar</p>
+    </div>
+
     <div class="nombreHerramienta" id="nombreHerramienta"></div>
     <nav class="barra" id="barra"></nav>
   </main>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <script src="js/modelo.js"></script>
   <script src="js/calles.js"></script>
   <script src="js/escenarios.js"></script>
@@ -56,6 +65,7 @@
   <script src="js/autos.js"></script>
   <script src="js/paleta.js"></script>
   <script src="js/dibujo.js"></script>
+  <script src="js/graficos.js"></script>
   <script src="js/gestos.js"></script>
   <script src="js/principal.js"></script>
 </body>

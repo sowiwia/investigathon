@@ -195,10 +195,10 @@ function dibujarAutos(capa, autos) {
   }
 }
 
-// La escena trae el plano, la red, las fases, los parámetros, la tolerancia de flujo cumplido
-// y la cuadra que está bajo el dedo.
+// La escena trae el plano, la red, las fases, los parámetros, los autos, las calles elegidas
+// para graficar (con su color), la tolerancia de flujo cumplido y la cuadra que está bajo el dedo.
 function dibujarMundo(capa, mapa, escena) {
-  const { plano, red, fases, parametros, autos, tol, señalada, zoom } = escena;
+  const { plano, red, fases, parametros, autos, elegidas, tol, señalada, zoom } = escena;
   capa.noStroke();
 
   if (!ciudadAlDia) {
@@ -212,6 +212,10 @@ function dibujarMundo(capa, mapa, escena) {
   }
   capa.image(capaCiudad, 0, 0);
 
+  for (const { calle, color } of elegidas) {
+    capa.fill(color);
+    recorrer(calle.cuadra.puntos, (p, q) => contorno(capa, p, q, medioAncho(calle.cuadra) + 3));
+  }
   if (señalada) {
     if (plano.calles.some(calle => calle.cuadra === señalada)) {
       capa.fill(paleta.senalada);
@@ -266,9 +270,12 @@ function dibujarObelisco(capa) {
 const iconos = {
   calle: ['.........', '.........', 'ggggggggg', 'aaaaaaaaa', 'wwaawwaaw', 'aaaaaaaaa', 'ggggggggg', '.........', '.........'],
   borrar: ['R.......R', '.R.....R.', '..R...R..', '...R.R...', '....R....', '...R.R...', '..R...R..', '.R.....R.', 'R.......R'],
+  graficar: ['w........', 'w......c.', 'w.....c..', 'w....c...', 'w.c..c...', 'wc.cc....', 'w........', 'wwwwwwwww', '.........'],
 };
 
-const coloresDeIconos = { R: paleta.rojo, g: paleta.gris, a: paleta.asfalto, w: paleta.texto };
+const coloresDeIconos = {
+  R: paleta.rojo, g: paleta.gris, a: paleta.asfalto, w: paleta.texto, c: paleta.cumplido,
+};
 
 // Pinta un ícono en un <canvas> de 9x9 (la hoja de estilos lo amplía sin suavizar).
 function pintarIcono(canvas, icono) {

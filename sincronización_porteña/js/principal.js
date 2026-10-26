@@ -50,6 +50,7 @@ let ultimaActualizacion = 0;
 const herramientas = [
   { nombre: 'calle', ayuda: 'Calle: tocá o arrastrá sobre una calle para sumarla a la red' },
   { nombre: 'borrar', ayuda: 'Borrar: tocá una cuadra para sacarla de la red' },
+  { nombre: 'graficar', ayuda: 'Graficar: tocá una cuadra para seguir su desfase' },
 ];
 let herramienta = 'calle';
 
@@ -78,6 +79,7 @@ function setup() {
   centrarVistaEn(640, 360);  // el Obelisco
   mostrarZoom();
   prepararInterfaz();
+  crearGraficos();
   escucharGestos(lienzo.elt);
   aplicarEscenario('microcentro');
 }
@@ -86,7 +88,7 @@ function draw() {
   if (jugando) avanzar(Math.min(deltaTime, 100) / 1000 * animacion);
 
   dibujarMundo(mundo, mapa, {
-    plano, red: redActual, fases, parametros, autos,
+    plano, red: redActual, fases, parametros, autos, elegidas: callesElegidas(),
     tol: tolCumplido, señalada, zoom: vista.zoom,
   });
   background(paleta.fondo);
@@ -96,6 +98,7 @@ function draw() {
   if (millis() - ultimaActualizacion > 250) {
     ultimaActualizacion = millis();
     actualizarIndicadores();
+    actualizarGraficos();
   }
 }
 
@@ -119,6 +122,7 @@ function avanzar(segundos) {
     autos = moverAutos(autos, plano, fases, parametros, pasosPorTramo * dt);
   }
   tiempo += tramos * pasosPorTramo * dt;
+  registrarMuestra(tiempo, redActual, fases);
 }
 
 function rearmarRed() {
@@ -130,6 +134,7 @@ function rearmarRed() {
 function alCambiarElPlano() {
   emparejarFases();
   rearmarRed();
+  limpiarSeries(plano);
   invalidarCiudad();
 }
 
@@ -140,6 +145,7 @@ function mezclarFases() {
 
 function reiniciarReloj() {
   tiempo = 0;
+  reiniciarMuestras();
 }
 
 // Pone en la red las cuadras del escenario, con su nivel de tránsito y su período.
@@ -226,6 +232,7 @@ function tocar(x, y) {
   const calle = buscarCalle(plano, señalada);
   if (!calle) return;
   if (herramienta === 'borrar') quitarCalleYFases(calle);
+  if (herramienta === 'graficar') alternarSerie(calle);
   alCambiarElPlano();
 }
 
