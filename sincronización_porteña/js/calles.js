@@ -123,8 +123,8 @@ const importancia = { avenida: 3, calle: 2, peatonal: 1 };
 function repartirVerdes(esquina, indice) {
   esquina.rol = new Map();
   if (esquina.calles.length === 0) return;
-  const mandamas = esquina.calles.reduce((mejor, calle) =>
-    importancia[calle.clase] > importancia[mejor.clase] ? calle : mejor);
+  const peso = calle => importancia[calle.clase] * 1e6 + calle.largo;
+  const mandamas = esquina.calles.reduce((mejor, calle) => peso(calle) > peso(mejor) ? calle : mejor);
   const eje = rumboDesde(mandamas, indice);
   for (const calle of esquina.calles) {
     const propio = rumboDesde(calle, indice);
