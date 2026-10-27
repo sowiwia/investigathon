@@ -44,7 +44,6 @@ const parametrosDePrueba = {
   flujoAvenida: 10,
   acople: 1,
   autosPorSegundo: 0.15,
-  deltaCero: false,
 };
 
 // Pone en la red las cuadras que se le pidan y devuelve el plano.

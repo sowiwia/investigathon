@@ -76,14 +76,10 @@ function armarRed(plano, parametros) {
   for (const calle of plano.calles) {
     const { a, b } = calle;
     const flujo = acopleDeCalle(calle, parametros);
-    const base = parametros.deltaCero
-      ? 0
-      : desfaseObjetivo(calle.cuadra.largo, parametros.v, parametros.T);
+    const base = desfaseObjetivo(calle.cuadra.largo, parametros.v, parametros.T);
     // una cuadra que entra como principal en una punta y como secundaria en la otra corre su
     // objetivo lo que valga la diferencia entre los arranques de verde (ec. 17)
-    const pi = parametros.deltaCero
-      ? 0
-      : correccionPi(calle.cuadra, plano.esquinas[a].ciudad, plano.esquinas[b].ciudad, parametros.s);
+    const pi = correccionPi(calle.cuadra, plano.esquinas[a].ciudad, plano.esquinas[b].ciudad, parametros.s);
 
     red.vecinos[a].push(b);
     red.vecinos[b].push(a);
@@ -100,4 +96,10 @@ function calleCumplida(calle, red, fases, tol) {
   if (calle.deAaB && calle.deBaA) return dobleManoEnOptimo(fases, red, calle.a, calle.b, tol);
   if (calle.deAaB) return flujoCumplido(fases, red, calle.a, calle.b, tol);
   return flujoCumplido(fases, red, calle.b, calle.a, tol);
+}
+
+// Usa el mismo criterio que pinta los ejes de azul: la red está sincronizada solamente cuando
+// tiene al menos una calle y todas sus cuadras cumplen su desfase objetivo.
+function redCumplida(plano, red, fases, tol) {
+  return plano.calles.length > 0 && plano.calles.every(calle => calleCumplida(calle, red, fases, tol));
 }

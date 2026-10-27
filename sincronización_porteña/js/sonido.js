@@ -6,7 +6,7 @@
 // seguidas sin que choquen.
 //
 // Para que no moleste: todo entra por un volumen general bajo y un compresor, cada efecto tiene un
-// mínimo de tiempo entre repeticiones, hay un tope de voces a la vez y el sonido se puede apagar.
+// mínimo de tiempo entre repeticiones, hay un tope de voces a la vez.
 
 const volumenGeneral = 0.5;
 const vocesMaximas = 18;
@@ -238,21 +238,7 @@ function sonarInicio() {
   tocarAcorde([220, 329.63, 440, 587.33], { volumen: 0.05, ataque: 0.18, caida: 1.4, separacion: 0.07 });
 }
 
-// Cambio de luz de un semáforo: un golpecito de madera. No suena uno por semáforo, que serían
-// varios por segundo, sino uno cada medio ciclo, al ritmo al que cambia de luz un semáforo.
-// La nota la pone el orden de la red: desordenada suena grave y sorda, ordenada aguda y pareja.
-function sonarSemaforos(orden, espera) {
-  if (!puedeSonar('semaforo', espera)) return false;
-  const nota = escala[Math.round(constrain(orden, 0, 1) * (escala.length - 1))];
-  const volumen = 0.03 + 0.05 * orden;
-  tocarRoce({ volumen: volumen * 0.7, caida: 0.04, filtro: 2200 + 2200 * orden });
-  tocarNota(nota, {
-    volumen, ataque: 0.002, caida: 0.06 + 0.06 * orden, filtro: 1800 + 2400 * orden, eco: 0.15,
-  });
-  return true;
-}
-
-// La red llegó al equilibrio: acorde mayor que resuelve, el único sonido que se permite destacar.
+// Todas las calles quedaron azules: acorde mayor que resuelve, el único sonido que se permite destacar.
 function sonarSincronizacion() {
   if (!puedeSonar('sincro', 1500)) return;
   tocarAcorde([261.63, 392, 523.25], { volumen: 0.055, ataque: 0.1, caida: 1.6, separacion: 0.09 });
@@ -264,30 +250,12 @@ function sonarSincronizacion() {
   });
 }
 
-// Encendido y apagado
-
-function alternarSonido() {
-  sonido.encendido = !sonido.encendido;
-  localStorage.setItem('sonido', sonido.encendido ? 'si' : 'no');
-  mostrarSonido();
-  if (sonido.encendido) sonarHerramienta();
-}
-
-function mostrarSonido() {
-  const boton = document.getElementById('botonSonido');
-  if (!boton) return;
-  boton.classList.toggle('activo', sonido.encendido);
-  boton.textContent = sonido.encendido ? 'Sonido ♪' : 'Sonido ✕';
-}
-
 function prepararSonido() {
-  mostrarSonido();
-  document.getElementById('botonSonido').addEventListener('click', alternarSonido);
   // Los botones de la interfaz comparten el mismo golpecito; los efectos propios del juego los
   // dispara principal.js donde pasa cada cosa.
   document.addEventListener('pointerdown', e => {
     const boton = e.target.closest('.boton');
-    if (!boton || boton.id === 'botonSonido') return;
+    if (!boton) return;
     if (boton.id === 'botonEmpezar') return;  // el inicio tiene su propio acorde
     sonarBoton();
   });

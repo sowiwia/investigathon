@@ -4,8 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Sincronización Porteña</title>
-  <link rel="stylesheet" href="css/estilo.css">
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+  <link rel="stylesheet" href="css/estilo.css?v=sync6">
+  <meta name="theme-color" content="#14162a">
+  <script src="vendor/p5.min.js?v=1"></script>
 </head>
 <body>
   <main id="juego">
@@ -16,56 +17,59 @@
       <div class="indicador"><span id="valorV">0.00</span><small>Potencial V</small></div>
       <div class="indicador"><span id="valorSincro">–</span><small>Tardó en sincronizar</small></div>
       <div class="indicador"><span id="valorTiempo">0 s</span><small>Tiempo</small></div>
-      <div class="estado" id="estado">Sin semáforos</div>
+      <div class="estado" id="estado" role="status" aria-live="polite">Sin semáforos</div>
     </header>
 
-    <aside class="costado">
-      <div class="zoom">Zoom <button class="boton" id="menosZoom">−</button> <span id="valorZoom">×2</span> <button class="boton" id="masZoom">+</button></div>
-      <label class="control">
-        <span class="fila"><span>Animación</span><span class="valor" id="valorAnimacion">×10</span></span>
-        <input type="range" id="deslizadorAnimacion" min="1" max="30" step="1" value="10">
-      </label>
-      <label class="control">
-        <span class="fila"><span>Acople K</span><span class="valor" id="valorAcople">×1.0</span></span>
-        <input type="range" id="deslizadorAcople" min="-8" max="12" step="1" value="0">
-      </label>
-      <div class="control">
-        <span class="fila"><span>Ciclo T</span><span class="valor" id="valorT">90 s</span></span>
-        <span class="fila"><span>Desfase Δ por cuadra</span><span class="valor" id="valorDelta">0.82 rad</span></span>
-      </div>
-      <div class="control">
-        <span class="fila"><span>Tránsito</span></span>
-        <div class="botones" id="niveles"></div>
-      </div>
-      <div class="botones">
-        <button class="boton" id="botonDeltaCero">Δ = 0</button>
-        <button class="boton" id="botonMezclar">Mezclar</button>
-        <button class="boton ancho" id="botonSonido">Sonido ♪</button>
-      </div>
-      <div class="control">
-        <span class="fila"><span>Escenarios</span></span>
-        <div class="botones columna" id="escenarios"></div>
+    <aside class="costado panelVentana" id="panelAjustes">
+      <button class="panelCabecera" type="button" aria-expanded="true" aria-controls="contenidoAjustes">
+        <span>Ajustes</span><span class="marcaPanel" aria-hidden="true">−</span>
+      </button>
+      <div class="panelContenido" id="contenidoAjustes">
+        <div class="zoom">Zoom <button class="boton" type="button" id="menosZoom" aria-label="Alejar">−</button> <span id="valorZoom">×2</span> <button class="boton" type="button" id="masZoom" aria-label="Acercar">+</button></div>
+        <label class="control">
+          <span class="fila"><span>Acople K</span><span class="valor" id="valorAcople">×1.0</span></span>
+          <input type="range" id="deslizadorAcople" min="-8" max="12" step="1" value="0">
+        </label>
+        <div class="control">
+          <span class="fila"><span>Ciclo T</span><span class="valor" id="valorT">90 s</span></span>
+          <span class="fila"><span>Desfase Δ típico</span><span class="valor" id="valorDelta">–</span></span>
+        </div>
+        <div class="control">
+          <span class="fila"><span>Tránsito</span></span>
+          <div class="botones" id="niveles"></div>
+        </div>
+        <div class="botones">
+          <button class="boton" type="button" id="botonMezclar">Mezclar</button>
+        </div>
+        <div class="control">
+          <span class="fila"><span>Escenarios</span></span>
+          <div class="botones columna" id="escenarios"></div>
+        </div>
       </div>
     </aside>
 
-    <div class="monitor">
-      <div class="rueda">
-        <canvas id="rueda" width="80" height="80"></canvas>
-        <div class="leyendaRueda">
-          <h3>Qué tan ordenada está</h3>
-          <p>Un punto por cuadra. Arriba es desfase cumplido.</p>
-          <p class="orden">Orden <span id="valorOrden">–</span></p>
+    <div class="monitor panelVentana" id="panelGraficos">
+      <button class="panelCabecera" type="button" aria-expanded="true" aria-controls="contenidoGraficos">
+        <span>Gráficos</span><span class="marcaPanel" aria-hidden="true">−</span>
+      </button>
+      <div class="panelContenido" id="contenidoGraficos">
+        <div class="rueda">
+          <canvas id="rueda" width="80" height="80"></canvas>
+          <div class="leyendaRueda">
+            <h3>Desfase de las calles</h3>
+            <p>Cada punto es una cuadra. Azul arriba: objetivo cumplido.</p>
+          </div>
         </div>
+        <h3>Potencial V</h3>
+        <div class="lienzoGrafico"><canvas id="graficoV"></canvas></div>
+        <h3>Desfase φj − φi y su objetivo Δji</h3>
+        <div class="lienzoGrafico"><canvas id="graficoDesfases"></canvas></div>
+        <p class="pista" id="pistaDesfases">Elegí una calle con Graficar</p>
       </div>
-      <h3>Potencial V</h3>
-      <div class="lienzoGrafico"><canvas id="graficoV"></canvas></div>
-      <h3>Desfase φj − φi y su objetivo Δji</h3>
-      <div class="lienzoGrafico"><canvas id="graficoDesfases"></canvas></div>
-      <p class="pista" id="pistaDesfases">Elegí una calle con Graficar</p>
     </div>
 
     <div class="nombreHerramienta" id="nombreHerramienta"></div>
-    <nav class="barra" id="barra"></nav>
+    <nav class="barra" id="barra" aria-label="Herramientas"></nav>
     <button class="boton botonInterfaz" id="botonInterfaz" aria-label="Ocultar los paneles"></button>
   </main>
 
@@ -82,28 +86,22 @@
         <h1><span class="chico">Sincronización</span><span class="grande">Porteña</span></h1>
         <p class="pregunta">¿Semáforos que se ordenan solos?</p>
         <p class="formal">Simulación del modelo de Kuramoto en la Ciudad de Buenos Aires</p>
-        <button class="boton grandeBoton" id="botonEmpezar">Empezar</button>
+        <button class="boton grandeBoton" type="button" id="botonEmpezar">Empezar</button>
       </div>
     </div>
   </section>
 
-  <section id="girar">
-    <canvas id="iconoGirar" width="20" height="20"></canvas>
-    <h2>Girá el teléfono</h2>
-    <p>Sincronización Porteña se juega en horizontal.</p>
-  </section>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="vendor/chart.umd.min.js?v=1"></script>
   <script src="js/modelo.js"></script>
   <script src="js/calles.js"></script>
   <script src="js/escenarios.js"></script>
-  <script src="js/plano.js"></script>
-  <script src="js/autos.js"></script>
+  <script src="js/plano.js?v=sync2"></script>
+  <script src="js/autos.js?v=sync3"></script>
   <script src="js/paleta.js"></script>
-  <script src="js/dibujo.js"></script>
-  <script src="js/graficos.js"></script>
-  <script src="js/gestos.js"></script>
-  <script src="js/sonido.js"></script>
-  <script src="js/principal.js"></script>
+  <script src="js/dibujo.js?v=sync1"></script>
+  <script src="js/graficos.js?v=sync3"></script>
+  <script src="js/gestos.js?v=sync1"></script>
+  <script src="js/sonido.js?v=a745ad76c8e7"></script>
+  <script src="js/principal.js?v=sync9"></script>
 </body>
 </html>

@@ -128,11 +128,16 @@ function dedos() {
 
 function empezarPellizco() {
   const { medio, distancia } = dedos();
+  if (distancia < 1) {
+    pellizco = null;
+    return;
+  }
   pellizco = { distancia, zoom: vista.zoom, punto: aMundo(medio.x, medio.y) };
 }
 
 // El punto del mundo que quedó entre los dedos sigue entre los dedos mientras se mueven.
 function seguirPellizco() {
+  if (!pellizco || pellizco.distancia < 1) return;
   const { medio, distancia } = dedos();
   vista.zoom = constrain(pellizco.zoom * distancia / pellizco.distancia, zoomMinimo(), zoomMaximo);
   vista.x = pellizco.punto.x - medio.x / vista.zoom;

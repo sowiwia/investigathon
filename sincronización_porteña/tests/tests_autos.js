@@ -55,6 +55,16 @@ QUnit.module('autos', hooks => {
     assert.notStrictEqual(autos[0].calle, primera, 'pasó a la cuadra siguiente');
   });
 
+  QUnit.test('no se van al azar si pueden seguir derecho', assert => {
+    const plano = planoCon(ARRIBA_IZQ, ARRIBA_DER);
+    const primera = manoUnica(plano.calles[0]);
+    const segunda = manoUnica(plano.calles[1]);
+    const auto = autoEn(primera, true, 120);
+    const autos = moverAutos([auto], plano, [0, 0, 0], parametrosDePrueba, 1, siempreAparecen);
+    assert.true(autos.includes(auto), 'el auto no desapareció');
+    assert.strictEqual(auto.calle, segunda, 'siguió derecho');
+  });
+
   QUnit.test('al final de la red salen', assert => {
     const plano = planoCon(ARRIBA_IZQ);
     const calle = manoUnica(plano.calles[0]);
@@ -92,13 +102,32 @@ QUnit.module('autos', hooks => {
     assert.deepEqual(moverDurante([autoEn(calle)], plano, [0, 0], 1), [], 'la calle ya no está');
   });
 
-  QUnit.test('todas las cuadras reciben autos nuevos, no solo la primera', assert => {
+  QUnit.test('los autos nuevos entran solo por las puntas de la red', assert => {
     const plano = planoCon(ARRIBA_IZQ, ARRIBA_DER);
     const primera = manoUnica(plano.calles[0]);
     const segunda = manoUnica(plano.calles[1]);
     const autos = moverAutos([], plano, [0, 0, 0], parametrosDePrueba, 0.1, siempreAparecen);
-    assert.ok(autos.some(auto => auto.calle === primera), 'la primera cuadra');
-    assert.ok(autos.some(auto => auto.calle === segunda), 'y la del medio también');
+    assert.ok(autos.some(auto => auto.calle === primera), 'entra por la primera cuadra');
+    assert.notOk(autos.some(auto => auto.calle === segunda), 'no aparece en el medio');
+  });
+
+  QUnit.test('una cuadra nueva arranca con un auto de muestra si es entrada', assert => {
+    const plano = planoCon(ARRIBA_IZQ);
+    const calle = manoUnica(plano.calles[0]);
+    const autos = [];
+    sembrarAutosEnCalle(autos, plano, calle, siempreAparecen);
+    assert.strictEqual(autos.length, 1);
+    assert.strictEqual(autos[0].calle, calle);
+    assert.true(autos[0].haciaB);
+  });
+
+  QUnit.test('no siembra autos en el medio de un corredor', assert => {
+    const plano = planoCon(ARRIBA_IZQ, ARRIBA_DER);
+    manoUnica(plano.calles[0]);
+    const segunda = manoUnica(plano.calles[1]);
+    const autos = [];
+    sembrarAutosEnCalle(autos, plano, segunda, siempreAparecen);
+    assert.strictEqual(autos.length, 0);
   });
 
   QUnit.test('los autos nuevos entran con el cruce en rojo igual que en verde', assert => {

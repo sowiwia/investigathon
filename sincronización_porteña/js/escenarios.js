@@ -4,12 +4,12 @@
 // modelo. Lo que decide en cuántos ciclos se ordena la red es el acople K, que tiene su propio
 // control.
 
-// autosPorSegundo es por cuadra: cada cuadra de la red recibe esa cantidad de autos nuevos por
+// autosPorSegundo es por entrada: cada entrada de la red recibe esa cantidad de autos nuevos por
 // segundo en cada sentido (una calle recibe menos que una avenida, ver autosEnCalle).
 const nivelesDeTransito = {
-  bajo: { nombre: 'Tránsito bajo', autosPorSegundo: 0.12 },
-  medio: { nombre: 'Tránsito medio', autosPorSegundo: 0.25 },
-  alto: { nombre: 'Tránsito alto', autosPorSegundo: 0.32 },
+  bajo: { nombre: 'Tránsito bajo', autosPorSegundo: 0.04 },
+  medio: { nombre: 'Tránsito medio', autosPorSegundo: 0.1 },
+  alto: { nombre: 'Tránsito alto', autosPorSegundo: 0.2 },
 };
 
 // Euler necesita dt·K chico; con estos K alcanza de sobra con centésimas de segundo.
@@ -53,9 +53,14 @@ function corredor(cuadra, desdeEsquina, cuantas) {
 }
 
 // La cuadra más al norte del grupo, con su punta norte: así el corredor se arma hacia el sur.
+// Se miran las dos puntas porque los datos de OSM no garantizan que a sea la punta norte.
 function arranqueDesdeElNorte(cuadras) {
+  const yMasAlNorte = cuadra => Math.min(
+    ciudad.esquinas[cuadra.a].y,
+    ciudad.esquinas[cuadra.b].y,
+  );
   const cuadra = cuadras.reduce((mejor, c) =>
-    ciudad.esquinas[c.a].y < ciudad.esquinas[mejor.a].y ? c : mejor);
+    yMasAlNorte(c) < yMasAlNorte(mejor) ? c : mejor);
   const norte = ciudad.esquinas[cuadra.a].y < ciudad.esquinas[cuadra.b].y ? cuadra.a : cuadra.b;
   return { cuadra, norte };
 }
@@ -93,7 +98,7 @@ const escenarios = {
   },
   nueveDeJulio: {
     nombre: 'Onda verde en la 9 de Julio',
-    ayuda: 'La 9 de Julio de punta a punta: el caso donde el desfase se ve de una',
+    ayuda: 'Una calzada de la 9 de Julio, de punta a punta: el desfase se ve de una',
     transito: 'medio',
     T: 90,
     armar: () => {

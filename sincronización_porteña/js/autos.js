@@ -4,16 +4,14 @@
 // Cada auto va por una cuadra, en un sentido (haciaB: de la esquina a hacia la b, o al revés) y por
 // un carril; avance es cuántos metros lleva recorridos de la cuadra.
 //
-// Todas las cuadras reciben autos nuevos por su cruce de arriba, en verde y en rojo, y en cada
-// cruce se va una parte de los que pasan: así el tránsito de una avenida queda parejo en vez de
-// acumularse cuadra a cuadra.
+// Los autos entran solo por las puntas de la red y siguen derecho hasta que no hay continuación.
+// No doblan ni desaparecen al azar en un cruce: si no hay una cuadra recta con flujo, salen.
 
 const autosEnCalle = 0.3;  // una calle recibe menos autos que una avenida
 const maximoDeAutos = 600;
 const metrosEntreAutos = 16;
 const metrosDeEntrada = 2;  // desde dónde aparece un auto nuevo: saliendo del cruce
 const metrosDeDispersion = 6;  // y cuánto más adelante puede aparecer, para que no entren pegados
-const salenEnLaEsquina = 0.2;  // parte de los autos que dobla y se va de la red en cada cruce
 const anguloDerecho = Math.PI / 3;  // hasta acá se considera que una calle sigue derecho
 
 // Una doble mano tiene uno por sentido (dos si es avenida); una mano única, el doble en un solo sentido.
@@ -59,6 +57,16 @@ function calleSiguiente(plano, calle, haciaB) {
     }
   }
   return elegida;
+}
+
+// Una cuadra es entrada de la red si su esquina de arriba no recibe tránsito de otra cuadra.
+// Así los autos no aparecen en el medio de un corredor que ya tenía tránsito.
+function esEntradaDeRed(plano, calle, haciaB) {
+  const arriba = haciaB ? calle.a : calle.b;
+  return !plano.calles.some(otra => {
+    if (otra === calle) return false;
+    return (otra.b === arriba && otra.deAaB) || (otra.a === arriba && otra.deBaA);
+  });
 }
 
 // Verde de 'calle' en una de sus esquinas: depende de si esa cuadra entra por el verde de la
@@ -135,9 +143,9 @@ function moverAutos(autos, plano, fases, parametros, segundos, azar = Math.rando
       continue;
     }
 
-    // llegó a la esquina: dobla y se va, sigue derecho, o sale del mapa
+    // llegó a la esquina: sigue derecho o sale del mapa; no hay giros
     const siguiente = calleSiguiente(plano, auto.calle, auto.haciaB);
-    if (!siguiente || azar() < salenEnLaEsquina) continue;
+    if (!siguiente) continue;
     const carril = carrilAlPasar(auto, siguiente.calle);
     const clave = claveDeCarril(plano, siguiente.calle, siguiente.haciaB, carril);
     // ya se fijó que había lugar antes de pisar la línea, así que esto casi no pasa; si igual se
@@ -166,24 +174,42 @@ function cuantosNacen(tasa, segundos, azar) {
   return Math.floor(esperados) + (azar() < esperados % 1 ? 1 : 0);
 }
 
-// Mete los autos nuevos del paso, apenas pasado el cruce de arriba de cada cuadra.
+// Un auto nuevo aparece apenas pasado el cruce de arriba, en un carril libre. Devuelve false si no
+// pudo entrar porque la cuadra ya tiene un auto pegado al cruce.
+function agregarAuto(autos, calle, haciaB, azar) {
+  if (autos.length >= maximoDeAutos) return false;
+  const tope = lineaDeFrenado(calle.cuadra) - 2;
+  if (tope < 0) return false;
+  const carril = Math.floor(azar() * cantidadDeCarriles(calle));
+  const desde = Math.min(metrosDeEntrada + azar() * metrosDeDispersion, tope);
+  const ocupado = autos.some(auto => auto.calle === calle && auto.haciaB === haciaB &&
+    auto.carril === carril && Math.abs(auto.avance - desde) < metrosEntreAutos);
+  if (ocupado) return false;
+  autos.push({ calle, haciaB, carril, avance: desde, tono: azar() });
+  return true;
+}
+
+// Mete los autos nuevos del paso, apenas pasado el cruce de arriba de cada entrada de la red.
 function agregarAutosNuevos(autos, plano, parametros, segundos, azar) {
   for (const calle of plano.calles) {
     for (const haciaB of [true, false]) {
-      if (!hayFlujo(calle, haciaB)) continue;
-      // nunca más allá de la línea de frenado: si no, el auto nacería dentro del cruce de adelante
-      const tope = lineaDeFrenado(calle.cuadra) - 2;
-      if (tope < 0) continue;
+      if (!hayFlujo(calle, haciaB) || !esEntradaDeRed(plano, calle, haciaB)) continue;
       const tasa = parametros.autosPorSegundo * (calle.avenida ? 1 : autosEnCalle);
-
       for (let k = cuantosNacen(tasa, segundos, azar); k > 0; k--) {
         if (autos.length >= maximoDeAutos) return;
-        const carril = Math.floor(azar() * cantidadDeCarriles(calle));
-        const desde = Math.min(metrosDeEntrada + azar() * metrosDeDispersion, tope);
-        const ocupado = autos.some(auto => auto.calle === calle && auto.haciaB === haciaB &&
-          auto.carril === carril && Math.abs(auto.avance - desde) < metrosEntreAutos);
-        if (!ocupado) autos.push({ calle, haciaB, carril, avance: desde, tono: azar() });
+        agregarAuto(autos, calle, haciaB, azar);
       }
     }
+  }
+}
+
+// Deja un auto de muestra en una cuadra recién agregada, para que no quede vacía hasta que toque
+// el próximo nacimiento aleatorio. Solo si la cuadra es una entrada: no inventa tránsito en el
+// medio de un corredor. Si es de doble mano, pone uno en cada sentido. 'ignorarEntrada' se usa en
+// un circuito cerrado, donde no hay ninguna entrada.
+function sembrarAutosEnCalle(autos, plano, calle, azar = Math.random, ignorarEntrada = false) {
+  for (const haciaB of [true, false]) {
+    if (!hayFlujo(calle, haciaB) || (!ignorarEntrada && !esEntradaDeRed(plano, calle, haciaB))) continue;
+    agregarAuto(autos, calle, haciaB, azar);
   }
 }

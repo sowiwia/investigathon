@@ -1,32 +1,31 @@
 // Estado del juego, simulación, interfaz y herramientas.
 
 const pasosMaximosPorCuadro = 300;
+// Un segundo y medio simulado por segundo real: los autos se pueden seguir con la vista y un ciclo
+// de semáforo de 90 s tarda un minuto en pantalla.
+const escalaDeTiempo = 1.5;
 // Los autos se mueven en tramos cortos en vez de todos los segundos del cuadro de una vez: con la
-// animación rápida, o si el teléfono baja los cuadros por segundo, un solo salto saldría más largo
+// escala acelerada, o si el teléfono baja los cuadros por segundo, un solo salto saldría más largo
 // que la distancia entre autos y se vería a saltos.
 const segundosPorTramoDeAutos = 0.25;
 const tolCumplido = 0.1;
-// Error de fase que se tolera para dar la red por equilibrada, medido contra el acople
-// (ver escalaDeAcople en modelo.js).
-const tolEquilibrio = 0.005;
 
 // T lo fija cada escenario y v es la velocidad de marcha de siempre: los dos entran en
 // Δ = 2πL/(vT) y se muestran como lectura en vez de dejarlos a mano.
 //
 // flujoCalle y flujoAvenida son el peso K de base, con la avenida llevando diez veces el flujo de
 // la calle, y el deslizador de acople los multiplica por igual. En cuántos ciclos se ordena la red
-// lo decide K contra ω = 2π/T: con K/ω ≈ 3 tarda unos pocos ciclos, el orden del paper
-// (sec. 5.1: K = 0.5 con ω = 1).
+// lo decide K contra ω = 2π/T: cuanto más grande, más rápido. Estos valores están pensados para el
+// juego: con K en ×1 la red se ordena en unos segundos y con ×8, casi al instante.
 const parametros = {
   T: 90,
   s: 0.5,
   v: 40 / 3.6,
   transito: 'medio',
-  flujoCalle: 0.02,
-  flujoAvenida: 0.2,
+  flujoCalle: 0.5,
+  flujoAvenida: 5,
   acople: 1,
   autosPorSegundo: nivelesDeTransito.medio.autosPorSegundo,
-  deltaCero: false,
 };
 
 // El deslizador va en pasos de 2^(1/4), así el acople barre de ×0.25 a ×8 sin que el extremo lento
@@ -35,14 +34,12 @@ function acopleDeDeslizador(posicion) {
   return Math.pow(2, posicion / 4);
 }
 
-let animacion = 10;
 let plano = crearPlano();
 let redActual = armarRed(plano, parametros);
 let fases = [];
 let autos = [];
 let tiempo = 0;
-let verdes = [];  // qué luz tenía cada semáforo en el cuadro anterior, para oír cuándo cambian
-let sincronizoEn = null;  // cuánto tardó la red en llegar al equilibrio, en segundos simulados
+let sincronizoEn = null;  // cuánto tardó la red en tener todas sus calles azules
 let jugando = false;
 let entrada = null;  // la cámara acercándose al Obelisco mientras se va la pantalla de inicio
 
@@ -50,8 +47,18 @@ let mapa;
 let datosDeCalles;
 let mundo;
 let señalada = null;  // la cuadra que está bajo el dedo
-let largoTipico = 0;
-let ultimaActualizacion = 0;
+let ultimaActualizacionIndicadores = 0;
+let ultimaActualizacionGraficos = 0;
+
+// En el celular, windowHeight a veces incluye la barra del navegador. visualViewport da el alto
+// que realmente se ve, así el canvas no queda cortado ni deja una franja vacía.
+function anchoDePantalla() {
+  return Math.round((window.visualViewport && window.visualViewport.width) || windowWidth);
+}
+
+function altoDePantalla() {
+  return Math.round((window.visualViewport && window.visualViewport.height) || windowHeight);
+}
 
 const herramientas = [
   { nombre: 'calle', ayuda: 'Calle: tocá o arrastrá sobre una calle para sumarla a la red' },
@@ -67,7 +74,7 @@ function preload() {
 
 function setup() {
   pixelDensity(1);
-  const lienzo = createCanvas(windowWidth, windowHeight);
+  const lienzo = createCanvas(anchoDePantalla(), altoDePantalla());
   lienzo.parent('lienzo');
   noSmooth();
   mundo = createGraphics(anchoMundo, altoMundo);
@@ -78,22 +85,23 @@ function setup() {
   capaCiudad.noSmooth();
 
   cargarCiudad(datosDeCalles);
-  const largos = ciudad.calles.map(c => c.largo).sort((a, b) => a - b);
-  largoTipico = Math.round(largos[Math.floor(largos.length / 2)]);
 
   vista.zoom = zoomMinimo();
   centrarVistaEn(640, 360);  // el Obelisco
   mostrarZoom();
   prepararInterfaz();
   crearGraficos();
+  prepararPaneles();
   escucharGestos(lienzo.elt);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', () => windowResized());
+  window.addEventListener('orientationchange', () => setTimeout(windowResized, 120));
   aplicarEscenario('microcentro');
 }
 
 function draw() {
   if (entrada) avanzarEntrada();
-  if (jugando) avanzar(Math.min(deltaTime, 100) / 1000 * animacion);
+  if (jugando) avanzar(Math.min(deltaTime, 100) / 1000 * escalaDeTiempo);
+  detectarSincronizacion();
 
   dibujarMundo(mundo, mapa, {
     plano, red: redActual, fases, parametros, autos, elegidas: callesElegidas(),
@@ -105,9 +113,12 @@ function draw() {
 
   dibujarRueda(plano, redActual, fases, tolCumplido);
 
-  if (millis() - ultimaActualizacion > 250) {
-    ultimaActualizacion = millis();
+  if (millis() - ultimaActualizacionIndicadores > 250) {
+    ultimaActualizacionIndicadores = millis();
     actualizarIndicadores();
+  }
+  if (millis() - ultimaActualizacionGraficos > 80 && graficosVisibles()) {
+    ultimaActualizacionGraficos = millis();
     actualizarGraficos();
   }
   animarSemaforoDeInicio();
@@ -115,7 +126,7 @@ function draw() {
 
 function windowResized() {
   const centro = aMundo(width / 2, height / 2);
-  resizeCanvas(windowWidth, windowHeight);
+  resizeCanvas(anchoDePantalla(), altoDePantalla());
   vista.zoom = constrain(vista.zoom, zoomMinimo(), zoomMaximo);
   centrarVistaEn(centro.x, centro.y);
   mostrarZoom();
@@ -134,41 +145,59 @@ function avanzar(segundos) {
   }
   tiempo += tramos * pasosPorTramo * dt;
   registrarMuestra(tiempo, redActual, fases);
-  sonarCambiosDeSemaforos();
 }
 
-// Un golpecito cada vez que cambian de luz los semáforos, espaciado como el medio ciclo que dura
-// cada luz: con el ciclo entero sonando esquina por esquina serían varios por segundo.
-function sonarCambiosDeSemaforos() {
-  if (verdes.length !== fases.length) verdes = new Array(fases.length).fill(null);
-  let cambios = 0;
-  for (let i = 0; i < fases.length; i++) {
-    const verde = verdeEnPrincipal(fases[i], parametros.s);
-    if (verdes[i] !== null && verdes[i] !== verde) cambios++;
-    verdes[i] = verde;
-  }
-  if (cambios === 0) return;
-  const espera = parametros.T / 2 / animacion * 1000;
-  sonarSemaforos(ordenDeLaRed(plano, redActual, fases).orden, espera);
+function largoTipicoDe(plano) {
+  const largos = plano.calles.map(calle => calle.cuadra.largo).sort((a, b) => a - b);
+  return largos.length ? largos[Math.floor(largos.length / 2)] : 0;
 }
 
 function rearmarRed() {
   redActual = armarRed(plano, parametros);
-  const delta = parametros.deltaCero ? 0 : desfaseObjetivo(largoTipico, parametros.v, parametros.T);
-  document.getElementById('valorDelta').textContent = `${delta.toFixed(2)} rad`;
+  const largo = largoTipicoDe(plano);
+  document.getElementById('valorDelta').textContent = largo
+    ? `${desfaseObjetivo(largo, parametros.v, parametros.T).toFixed(2)} rad`
+    : '–';
+  // Cambiar K mueve el equilibrio: la red tiene que volver a sincronizarse.
+  sincronizoEn = null;
 }
 
 function alCambiarElPlano() {
   emparejarFases();
   rearmarRed();
   limpiarSeries(plano);
+  sembrarAutosFaltantes();
   invalidarCiudad();
-  sincronizoEn = null;
+}
+
+// Las entradas nuevas arrancan con un auto de muestra: así no hay que esperar al próximo nacimiento
+// aleatorio para ver que la red quedó con tránsito. En un circuito cerrado, sin entradas, se siembran
+// las cuadras para que no quede vacío.
+function sembrarAutosFaltantes() {
+  const hayEntradas = plano.calles.some(calle => [true, false].some(haciaB =>
+    hayFlujo(calle, haciaB) && esEntradaDeRed(plano, calle, haciaB)));
+  for (const calle of plano.calles) {
+    if (!autos.some(auto => auto.calle === calle)) {
+      sembrarAutosEnCalle(autos, plano, calle, Math.random, !hayEntradas);
+    }
+  }
 }
 
 function mezclarFases() {
   fases = fases.map(() => Math.random() * vuelta);
   reiniciarReloj();
+}
+
+// Saca todas las cuadras de la red y deja el tablero limpio.
+function vaciarRed() {
+  plano = crearPlano();
+  fases = [];
+  autos = [];
+  señalada = null;
+  alCambiarElPlano();
+  reiniciarReloj();
+  mostrarNombre();
+  sonarBorrar();
 }
 
 // El cronómetro de sincronización arranca de nuevo cada vez que cambia algo que mueve el equilibrio.
@@ -191,7 +220,9 @@ function aplicarEscenario(clave) {
   alCambiarElPlano();
   mezclarFases();
   for (const boton of document.querySelectorAll('#escenarios .boton')) {
-    boton.classList.toggle('activo', boton.dataset.escenario === clave);
+    const activo = boton.dataset.escenario === clave;
+    boton.classList.toggle('activo', activo);
+    boton.setAttribute('aria-pressed', String(activo));
   }
 }
 
@@ -201,29 +232,34 @@ function elegirTransito(clave) {
   parametros.transito = clave;
   parametros.autosPorSegundo = nivelesDeTransito[clave].autosPorSegundo;
   for (const boton of document.querySelectorAll('#niveles .boton')) {
-    boton.classList.toggle('activo', boton.dataset.nivel === clave);
+    const activo = boton.dataset.nivel === clave;
+    boton.classList.toggle('activo', activo);
+    boton.setAttribute('aria-pressed', String(activo));
   }
 }
 
 function actualizarIndicadores() {
-  const hayEsquinas = plano.esquinas.length > 0;
+  const hayCalles = plano.calles.length > 0;
 
   document.getElementById('valorV').textContent = potencial(fases, redActual).toFixed(2);
   document.getElementById('valorTiempo').textContent = `${Math.floor(tiempo)} s`;
 
   const estado = document.getElementById('estado');
-  const enEquilibrio = hayEsquinas &&
-    convergio(fases, redActual, vuelta / parametros.T, tolEquilibrio * escalaDeAcople(redActual));
-  if (enEquilibrio && sincronizoEn === null) {
-    sincronizoEn = tiempo;
-    marcarSincronizacion(tiempo);
-    sonarSincronizacion();
-  }
+  const sincronizada = redCumplida(plano, redActual, fases, tolCumplido);
   document.getElementById('valorSincro').textContent = sincronizoEn === null
     ? '–'
     : `${Math.round(sincronizoEn)} s · ${(sincronizoEn / parametros.T).toFixed(1)} ciclos`;
-  estado.textContent = !hayEsquinas ? 'Sin semáforos' : enEquilibrio ? 'En equilibrio' : 'Ordenándose';
-  estado.classList.toggle('equilibrio', enEquilibrio);
+  estado.textContent = !hayCalles ? 'Sin semáforos' : sincronizada ? 'Sincronizado' : 'Sin sincronizar';
+  estado.classList.toggle('sincronizado', sincronizada);
+}
+
+// Se comprueba en cada cuadro, igual que el color de las calles, para que el tiempo y el acorde
+// coincidan con el instante en que la última cuadra pasa a azul.
+function detectarSincronizacion() {
+  if (!jugando || sincronizoEn !== null || !redCumplida(plano, redActual, fases, tolCumplido)) return;
+  sincronizoEn = tiempo;
+  marcarSincronizacion(tiempo);
+  sonarSincronizacion();
 }
 
 // Herramientas. Reciben posiciones de la pantalla; gestos.js decide si fue un toque o un arrastre.
@@ -308,9 +344,11 @@ function prepararInterfaz() {
   const barra = document.getElementById('barra');
   herramientas.forEach((h, i) => {
     const ranura = document.createElement('button');
+    ranura.type = 'button';
     ranura.className = 'ranura';
     ranura.id = `herramienta-${h.nombre}`;
     ranura.setAttribute('aria-label', h.ayuda);
+    ranura.setAttribute('aria-pressed', 'false');
     ranura.innerHTML = `<span class="tecla">${i + 1}</span>`;
     const icono = document.createElement('canvas');
     icono.width = 9;
@@ -320,21 +358,26 @@ function prepararInterfaz() {
     ranura.addEventListener('click', () => elegirHerramienta(h.nombre));
     barra.appendChild(ranura);
   });
+
+  const vaciar = document.createElement('button');
+  vaciar.type = 'button';
+  vaciar.className = 'ranura';
+  vaciar.id = 'botonVaciar';
+  vaciar.setAttribute('aria-label', 'Vaciar toda la red');
+  vaciar.title = 'Vaciar toda la red';
+  const iconoVaciar = document.createElement('canvas');
+  iconoVaciar.width = 9;
+  iconoVaciar.height = 9;
+  pintarIcono(iconoVaciar, iconos.vaciar);
+  vaciar.appendChild(iconoVaciar);
+  vaciar.addEventListener('click', vaciarRed);
+  barra.appendChild(vaciar);
+
   elegirHerramienta(herramienta);
 
-  document.getElementById('deslizadorAnimacion').addEventListener('input', e => {
-    animacion = Number(e.target.value);
-    document.getElementById('valorAnimacion').textContent = `×${animacion}`;
-  });
   document.getElementById('deslizadorAcople').addEventListener('input', e => {
     parametros.acople = acopleDeDeslizador(Number(e.target.value));
     mostrarAcople();
-    rearmarRed();
-    reiniciarReloj();
-  });
-  document.getElementById('botonDeltaCero').addEventListener('click', e => {
-    parametros.deltaCero = !parametros.deltaCero;
-    e.currentTarget.classList.toggle('activo', parametros.deltaCero);
     rearmarRed();
     reiniciarReloj();
   });
@@ -346,9 +389,12 @@ function prepararInterfaz() {
   const niveles = document.getElementById('niveles');
   for (const [clave, nivel] of Object.entries(nivelesDeTransito)) {
     const boton = document.createElement('button');
+    boton.type = 'button';
     boton.className = 'boton';
     boton.dataset.nivel = clave;
-    boton.textContent = nivel.nombre.replace('Tránsito ', '');
+    boton.setAttribute('aria-pressed', 'false');
+    const nombre = nivel.nombre.replace('Tránsito ', '');
+    boton.textContent = nombre[0].toUpperCase() + nombre.slice(1);
     boton.title = nivel.nombre;
     boton.addEventListener('click', () => elegirTransito(clave));
     niveles.appendChild(boton);
@@ -357,28 +403,74 @@ function prepararInterfaz() {
   const lista = document.getElementById('escenarios');
   for (const [clave, escenario] of Object.entries(escenarios)) {
     const boton = document.createElement('button');
+    boton.type = 'button';
     boton.className = 'boton';
     boton.dataset.escenario = clave;
+    boton.setAttribute('aria-pressed', 'false');
     boton.textContent = escenario.nombre;
     boton.title = escenario.ayuda;
     boton.addEventListener('click', () => aplicarEscenario(clave));
     lista.appendChild(boton);
   }
-  document.getElementById('masZoom').addEventListener('click', () => cambiarZoom(vista.zoom + 1, width / 2, height / 2));
-  document.getElementById('menosZoom').addEventListener('click', () => cambiarZoom(vista.zoom - 1, width / 2, height / 2));
+  document.getElementById('masZoom').addEventListener('click', () => cambiarZoom(vista.zoom * pasoDeZoom, width / 2, height / 2));
+  document.getElementById('menosZoom').addEventListener('click', () => cambiarZoom(vista.zoom / pasoDeZoom, width / 2, height / 2));
   document.getElementById('botonEmpezar').addEventListener('click', empezar);
 
   prepararBotonDeInterfaz();
-  pintarIcono(document.getElementById('iconoGirar'), iconoGirar);
   prepararSonido();
   mostrarAcople();
   rearmarRed();
+}
+
+// Cada ventana se puede plegar por separado. En pantallas chicas (celular vertical u horizontal)
+// se inicia con las dos cerradas y, al abrir una, se cierra la otra para que el mapa no quede
+// cubierto por dos capas.
+function prepararPaneles() {
+  const paneles = [...document.querySelectorAll('.panelVentana')];
+  const pantallaChica = window.matchMedia('(max-width: 700px), (max-height: 500px)');
+
+  function mostrarPanel(panel, abierto) {
+    panel.classList.toggle('cerrada', !abierto);
+    const boton = panel.querySelector('.panelCabecera');
+    boton.setAttribute('aria-expanded', String(abierto));
+    boton.querySelector('.marcaPanel').textContent = abierto ? '−' : '+';
+  }
+
+  for (const panel of paneles) {
+    mostrarPanel(panel, !pantallaChica.matches);
+    panel.querySelector('.panelCabecera').addEventListener('click', () => {
+      const abrir = panel.classList.contains('cerrada');
+      if (abrir && pantallaChica.matches) {
+        for (const otro of paneles) if (otro !== panel) mostrarPanel(otro, false);
+      }
+      mostrarPanel(panel, abrir);
+      if (abrir && panel.id === 'panelGraficos') {
+        graficoV.resize();
+        graficoDesfases.resize();
+        actualizarGraficos();
+      }
+      if (abrir) {
+        document.body.classList.remove('sinPaneles');
+        const botonInterfaz = document.getElementById('botonInterfaz');
+        botonInterfaz.classList.remove('activo');
+        botonInterfaz.setAttribute('aria-pressed', 'false');
+        botonInterfaz.setAttribute('aria-label', 'Ocultar los paneles');
+      }
+      sonarHerramienta();
+    });
+  }
+
+  pantallaChica.addEventListener('change', e => {
+    for (const panel of paneles) mostrarPanel(panel, !e.matches);
+  });
 }
 
 // El botón de la esquina esconde los paneles de los costados para mirar el mapa sin tapar nada.
 // La barra de herramientas del centro y el cartel de abajo quedan siempre.
 function prepararBotonDeInterfaz() {
   const boton = document.getElementById('botonInterfaz');
+  boton.type = 'button';
+  boton.setAttribute('aria-pressed', 'false');
   const icono = document.createElement('canvas');
   icono.width = 9;
   icono.height = 9;
@@ -387,6 +479,7 @@ function prepararBotonDeInterfaz() {
   boton.addEventListener('click', () => {
     const sinPaneles = document.body.classList.toggle('sinPaneles');
     boton.classList.toggle('activo', sinPaneles);
+    boton.setAttribute('aria-pressed', String(sinPaneles));
     boton.setAttribute('aria-label', sinPaneles ? 'Mostrar los paneles' : 'Ocultar los paneles');
     sonarHerramienta();
   });
@@ -401,7 +494,10 @@ function elegirHerramienta(nombre) {
   herramienta = nombre;
   if (jugando) sonarHerramienta();
   for (const h of herramientas) {
-    document.getElementById(`herramienta-${h.nombre}`).classList.toggle('elegida', h.nombre === nombre);
+    const boton = document.getElementById(`herramienta-${h.nombre}`);
+    const activa = h.nombre === nombre;
+    boton.classList.toggle('elegida', activa);
+    boton.setAttribute('aria-pressed', String(activa));
   }
   mostrarNombre();
 }
@@ -420,7 +516,9 @@ function empezar() {
   if (jugando) return;
   const inicio = document.getElementById('inicio');
   inicio.classList.add('saliendo');
-  inicio.addEventListener('transitionend', () => inicio.classList.add('oculto'), { once: true });
+  const ocultarInicio = () => inicio.classList.add('oculto');
+  inicio.addEventListener('transitionend', ocultarInicio, { once: true });
+  setTimeout(ocultarInicio, duracionEntrada + 200);
   document.body.classList.add('enJuego');
   entrada = {
     comenzo: millis(),
@@ -446,7 +544,7 @@ function avanzarEntrada() {
 // El semáforo del dibujo del inicio alterna con el mismo ciclo que los del mapa.
 function animarSemaforoDeInicio() {
   if (document.getElementById('inicio').classList.contains('oculto')) return;
-  const fase = mod2pi(millis() / 1000 * animacion * vuelta / parametros.T);
+  const fase = mod2pi(millis() / 1000 * escalaDeTiempo * vuelta / parametros.T);
   const verde = verdeEnPrincipal(fase, parametros.s);
   document.getElementById('luzVerde').classList.toggle('prendida', verde);
   document.getElementById('luzRoja').classList.toggle('prendida', !verde);

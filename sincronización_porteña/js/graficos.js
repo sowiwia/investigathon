@@ -1,8 +1,10 @@
 // Gráficos con Chart.js: el potencial V en el tiempo y el desfase de hasta 4 calles elegidas,
 // cada uno con su objetivo como línea punteada.
 
-const segundosEntreMuestras = 1;
-const maximoDeMuestras = 300;
+// Cuatro muestras por segundo hacen que la línea avance con fluidez incluso a velocidad normal.
+// Se conservan los últimos 200 segundos para limitar el trabajo de Chart.js en celulares.
+const segundosEntreMuestras = 0.25;
+const maximoDeMuestras = 800;
 const coloresDeSeries = ['#ff7eb6', '#9be564', '#c792ea', '#7fdbca'];
 
 let graficoV;
@@ -10,7 +12,7 @@ let graficoDesfases;
 let muestrasDeV = [];
 let series = [];  // { calle, color, datos: [{ x, y }], ultimo, objetivo }
 let proximaMuestra = 0;
-let marcaDeSincronizacion = null;  // en qué segundo la red llegó al equilibrio
+let marcaDeSincronizacion = null;  // en qué segundo todas las calles quedaron azules
 
 function crearGraficos() {
   Chart.defaults.font.family = "'Monocraft', monospace";
@@ -18,6 +20,11 @@ function crearGraficos() {
   Chart.defaults.color = '#9a9fc3';
   graficoV = new Chart(document.getElementById('graficoV'), configuracion());
   graficoDesfases = new Chart(document.getElementById('graficoDesfases'), configuracion());
+}
+
+function graficosVisibles() {
+  const panel = document.getElementById('panelGraficos');
+  return !panel.classList.contains('cerrada') && !document.body.classList.contains('sinPaneles');
 }
 
 // Arranca de cero el historial: se usa al mezclar fases o al cambiar algo que mueve el equilibrio.
@@ -42,6 +49,8 @@ function configuracion() {
     options: {
       animation: false,
       maintainAspectRatio: false,
+      normalized: true,
+      parsing: false,
       events: [],
       plugins: { legend: { display: false }, tooltip: { enabled: false } },
       scales: {
@@ -142,9 +151,8 @@ function callesElegidas() {
 }
 
 // Rueda de desfases: un punto por cuadra, en el ángulo que le falta para cumplir su objetivo.
-// Arriba (ángulo 0) está el desfase cumplido, así que la red se ordena cuando todos los puntos
-// suben. La aguja es el promedio de esos ángulos y su largo, el orden r de Kuramoto: 1 es todas
-// las cuadras cumpliendo lo mismo y 0 es desfases repartidos por todos lados.
+// Arriba (ángulo 0) está el desfase cumplido; todos los puntos azules arriba significa que la red
+// está sincronizada.
 
 const radioDeLaRueda = 34;
 
@@ -154,24 +162,20 @@ function errorDeCalle(calle, red, fases) {
   return objetivo === null ? null : wrap(desfase - objetivo);
 }
 
-// Parámetro de orden: 1 cuando todas las cuadras están igual de lejos de su objetivo y 0 cuando
-// sus errores apuntan para cualquier lado.
-function ordenDeLaRed(plano, red, fases) {
+// La aguja apunta al promedio de los puntos. Su largo muestra qué tan juntos están: cuando las
+// calles convergen arriba, llega hasta el grupo azul sin necesitar un indicador numérico aparte.
+function agujaDeLaRueda(plano, red, fases) {
   let sumaX = 0;
   let sumaY = 0;
   let cuantas = 0;
   for (const calle of plano.calles) {
     const error = errorDeCalle(calle, red, fases);
     if (error === null) continue;
-    sumaX += Math.cos(error);
-    sumaY += Math.sin(error);
+    sumaX += Math.sin(error);
+    sumaY -= Math.cos(error);
     cuantas++;
   }
-  return {
-    orden: cuantas === 0 ? 0 : Math.hypot(sumaX, sumaY) / cuantas,
-    angulo: Math.atan2(sumaY, sumaX),
-    cuantas,
-  };
+  return cuantas === 0 ? null : { x: sumaX / cuantas, y: sumaY / cuantas };
 }
 
 function dibujarRueda(plano, red, fases, tol) {
@@ -202,15 +206,13 @@ function dibujarRueda(plano, red, fases, tol) {
     ctx.fillRect(Math.round(x - lado / 2), Math.round(y - lado / 2), lado, lado);
   }
 
-  const { orden, angulo, cuantas } = ordenDeLaRed(plano, red, fases);
-  if (cuantas > 0) {
+  const aguja = agujaDeLaRueda(plano, red, fases);
+  if (aguja) {
     ctx.strokeStyle = paleta.texto;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(medio, medio);
-    ctx.lineTo(medio + radioDeLaRueda * orden * Math.sin(angulo),
-      medio - radioDeLaRueda * orden * Math.cos(angulo));
+    ctx.lineTo(medio + radioDeLaRueda * aguja.x, medio + radioDeLaRueda * aguja.y);
     ctx.stroke();
   }
-  document.getElementById('valorOrden').textContent = cuantas === 0 ? '–' : orden.toFixed(2);
 }

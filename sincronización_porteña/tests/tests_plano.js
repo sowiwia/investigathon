@@ -103,12 +103,6 @@ QUnit.module('red para el modelo', hooks => {
     assert.ok(Math.abs(red.delta[0][1] - base) < 1e-12);
   });
 
-  QUnit.test('con Δ = 0 todos los objetivos son 0, también los corridos', assert => {
-    const plano = planoCon(ABAJO_DER, DIAGONAL);
-    const red = armarRed(plano, { ...parametrosDePrueba, deltaCero: true });
-    assert.deepEqual(red.delta.flat().filter(d => d !== 0), []);
-  });
-
   QUnit.test('una calle de mano única no cambia |Ni|, sacarla sí', assert => {
     const plano = planoCon(ARRIBA_IZQ, ARRIBA_DER);
     const antes = armarRed(plano, parametrosDePrueba).vecinos.map(v => v.length);
@@ -177,5 +171,15 @@ QUnit.module('red para el modelo', hooks => {
     calle.deBaA = false;  // de a hacia b
     assert.true(calleCumplida(calle, red, [delta, 0], 0.01), 'φa − φb = Δab');
     assert.false(calleCumplida(calle, red, [0, delta], 0.01));
+  });
+
+  QUnit.test('la red se cumple solamente cuando todas las calles están azules', assert => {
+    const plano = planoCon(ARRIBA_IZQ, ABAJO_IZQ);
+    const red = armarRed(plano, parametrosDePrueba);
+
+    assert.true(redCumplida(plano, red, [0, 0, 0, 0], 0.1), 'todas cumplidas');
+    assert.false(redCumplida(plano, red, [0, 0, 0, Math.PI], 0.1), 'una calle naranja');
+    assert.false(redCumplida(crearPlano(), armarRed(crearPlano(), parametrosDePrueba), [], 0.1),
+      'una red vacía no cuenta como sincronizada');
   });
 });
