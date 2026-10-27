@@ -99,6 +99,8 @@ function draw() {
   image(mundo, Math.round(-vista.x * vista.zoom), Math.round(-vista.y * vista.zoom),
     anchoMundo * vista.zoom, altoMundo * vista.zoom);
 
+  dibujarRueda(plano, redActual, fases, tolCumplido);
+
   if (millis() - ultimaActualizacion > 250) {
     ultimaActualizacion = millis();
     actualizarIndicadores();

@@ -139,3 +139,64 @@ function limpiarSeries(plano) {
 function callesElegidas() {
   return series.map(serie => ({ calle: serie.calle, color: serie.color }));
 }
+
+// Rueda de desfases: un punto por cuadra, en el ángulo que le falta para cumplir su objetivo.
+// Arriba (ángulo 0) está el desfase cumplido, así que la red se ordena cuando todos los puntos
+// suben. La aguja es el promedio de esos ángulos y su largo, el orden r de Kuramoto: 1 es todas
+// las cuadras cumpliendo lo mismo y 0 es desfases repartidos por todos lados.
+
+const radioDeLaRueda = 34;
+
+// Lo que le falta a una cuadra para cumplir: 0 es cumplida, ±π es lo más lejos posible.
+function errorDeCalle(calle, red, fases) {
+  const { desfase, objetivo } = desfaseDeCalle(calle, red, fases);
+  return objetivo === null ? null : wrap(desfase - objetivo);
+}
+
+function dibujarRueda(plano, red, fases, tol) {
+  const canvas = document.getElementById('rueda');
+  const ctx = canvas.getContext('2d');
+  const medio = canvas.width / 2;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // el aro y la zona de tolerancia arriba
+  ctx.strokeStyle = paleta.cordon;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(medio, medio, radioDeLaRueda, 0, 2 * Math.PI);
+  ctx.stroke();
+  ctx.strokeStyle = paleta.cumplido;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.arc(medio, medio, radioDeLaRueda, -Math.PI / 2 - tol, -Math.PI / 2 + tol);
+  ctx.stroke();
+
+  let sumaX = 0;
+  let sumaY = 0;
+  let cuantas = 0;
+  for (const calle of plano.calles) {
+    const error = errorDeCalle(calle, red, fases);
+    if (error === null) continue;
+    sumaX += Math.cos(error);
+    sumaY += Math.sin(error);
+    cuantas++;
+    const x = medio + radioDeLaRueda * Math.sin(error);
+    const y = medio - radioDeLaRueda * Math.cos(error);
+    const lado = calle.avenida ? 4 : 3;
+    ctx.fillStyle = Math.abs(error) < tol ? paleta.cumplido : paleta.lejos;
+    ctx.fillRect(Math.round(x - lado / 2), Math.round(y - lado / 2), lado, lado);
+  }
+
+  const orden = cuantas === 0 ? 0 : Math.hypot(sumaX, sumaY) / cuantas;
+  if (cuantas > 0) {
+    const angulo = Math.atan2(sumaY, sumaX);
+    ctx.strokeStyle = paleta.texto;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(medio, medio);
+    ctx.lineTo(medio + radioDeLaRueda * orden * Math.sin(angulo),
+      medio - radioDeLaRueda * orden * Math.cos(angulo));
+    ctx.stroke();
+  }
+  document.getElementById('valorOrden').textContent = cuantas === 0 ? '–' : orden.toFixed(2);
+}
