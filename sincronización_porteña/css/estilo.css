@@ -29,6 +29,7 @@ html, body {
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
 }
 
 button {
@@ -59,6 +60,7 @@ button {
 #lienzo canvas {
   display: block;
   image-rendering: pixelated;
+  touch-action: none;
 }
 
 .arriba,
@@ -166,6 +168,7 @@ input[type=range] {
   height: 22px;
   margin: 0;
   background: transparent;
+  touch-action: none;
 }
 
 input[type=range]::-webkit-slider-runnable-track {
