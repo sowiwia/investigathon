@@ -273,8 +273,33 @@ const iconos = {
   graficar: ['w........', 'w......c.', 'w.....c..', 'w....c...', 'w.c..c...', 'wc.cc....', 'w........', 'wwwwwwwww', '.........'],
 };
 
+// Teléfono acostado con una flecha de giro, para el aviso de girar la pantalla (20x20).
+const iconoGirar = [
+  '....................',
+  '...yyyy.............',
+  '..y....y............',
+  '.y......y...........',
+  '.y.....yyy..........',
+  '.y......y...........',
+  '....................',
+  '....................',
+  '.kkkkkkkkkkkkkkkkkk.',
+  '.kggggggggggggggggk.',
+  '.kgppppppppppppppgk.',
+  '.kgppppppppppppppgk.',
+  '.kgppppppppppppppgk.',
+  '.kgppppppppppppppgk.',
+  '.kgppppppppppppppgk.',
+  '.kggggggggggggggggk.',
+  '.kkkkkkkkkkkkkkkkkk.',
+  '....................',
+  '....................',
+  '....................',
+];
+
 const coloresDeIconos = {
-  R: paleta.rojo, g: paleta.gris, a: paleta.asfalto, w: paleta.texto, c: paleta.cumplido,
+  k: paleta.caja, R: paleta.rojo, g: paleta.gris, a: paleta.asfalto,
+  w: paleta.texto, y: paleta.amarillo, c: paleta.cumplido, p: paleta.pantalla,
 };
 
 // Pinta un ícono en un <canvas> de 9x9 (la hoja de estilos lo amplía sin suavizar).

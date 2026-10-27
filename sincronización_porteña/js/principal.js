@@ -341,6 +341,7 @@ function prepararInterfaz() {
     jugando = true;
   });
 
+  pintarIcono(document.getElementById('iconoGirar'), iconoGirar);
   mostrarAcople();
   rearmarRed();
 }

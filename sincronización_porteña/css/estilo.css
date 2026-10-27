@@ -420,6 +420,154 @@ h1 .grande {
   border-width: 4px;
 }
 
+/* Aviso para girar el teléfono */
+
+#girar {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: var(--fondo);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  padding: 0 28px;
+  text-align: center;
+}
+
+#iconoGirar {
+  width: 160px;
+  height: 160px;
+  image-rendering: pixelated;
+}
+
+#girar h2 {
+  margin: 0;
+  font-size: 24px;
+}
+
+#girar p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--atenuado);
+  line-height: 1.6;
+}
+
+@media (orientation: portrait) and (max-width: 900px) {
+  #girar {
+    display: flex;
+  }
+}
+
+/* Celular en horizontal: todo más compacto */
+
+@media (max-height: 500px) {
+  .arriba {
+    padding: 8px 12px 16px;
+    gap: 18px;
+  }
+
+  .titulo {
+    display: none;
+  }
+
+  .indicador {
+    font-size: 13px;
+  }
+
+  .indicador small {
+    font-size: 9px;
+    margin-left: 4px;
+  }
+
+  .estado {
+    font-size: 10px;
+    margin-left: auto;
+  }
+
+  .costado {
+    top: 44px;
+    right: 10px;
+    width: 190px;
+    gap: 6px;
+  }
+
+  .control {
+    font-size: 10px;
+    gap: 2px;
+  }
+
+  .botones .boton {
+    font-size: 11px;
+    padding: 9px 4px;
+  }
+
+  .nombreHerramienta {
+    bottom: 64px;
+    font-size: 11px;
+  }
+
+  .barra {
+    bottom: 8px;
+    gap: 3px;
+    padding: 3px;
+    border-width: 2px;
+  }
+
+  .ranura {
+    width: 44px;
+    height: 44px;
+  }
+
+  .contenidoInicio {
+    flex-direction: row;
+    gap: 36px;
+    text-align: left;
+  }
+
+  .textosInicio {
+    align-items: flex-start;
+  }
+
+  .obelisco {
+    width: 144px;
+  }
+
+  h1 .chico {
+    font-size: 20px;
+    letter-spacing: 2px;
+  }
+
+  h1 .grande {
+    font-size: 50px;
+  }
+
+  .pregunta {
+    font-size: 17px;
+    margin-top: 6px;
+  }
+
+  .formal {
+    font-size: 11px;
+    max-width: 360px;
+    line-height: 1.5;
+  }
+
+  .grandeBoton {
+    margin-top: 6px;
+    font-size: 16px;
+  }
+}
+
+/* En pantallas táctiles el zoom es con dos dedos y no hay teclas */
+@media (pointer: coarse) {
+  .zoom,
+  .ranura .tecla {
+    display: none;
+  }
+}
+
 /* Monitor de gráficos */
 
 .monitor {
@@ -456,4 +604,29 @@ h1 .grande {
   text-align: center;
   font-size: 10px;
   color: var(--atenuado);
+}
+
+@media (max-height: 500px) {
+  .monitor {
+    left: 10px;
+    bottom: 8px;
+    width: 210px;
+    padding: 6px 8px 2px;
+    border-width: 2px;
+  }
+
+  .monitor h3 {
+    font-size: 9px;
+    margin-bottom: 2px;
+  }
+
+  .lienzoGrafico {
+    height: 52px;
+    margin-bottom: 4px;
+  }
+
+  .pista {
+    bottom: 24px;
+    font-size: 9px;
+  }
 }
