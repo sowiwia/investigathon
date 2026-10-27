@@ -42,7 +42,7 @@ let fases = [];
 let autos = [];
 let tiempo = 0;
 let sincronizoEn = null;  // cuánto tardó la red en llegar al equilibrio, en segundos simulados
-let jugando = true;
+let jugando = false;
 
 let mapa;
 let datosDeCalles;
@@ -106,6 +106,7 @@ function draw() {
     actualizarIndicadores();
     actualizarGraficos();
   }
+  animarSemaforoDeInicio();
 }
 
 function windowResized() {
@@ -335,6 +336,11 @@ function prepararInterfaz() {
   }
   document.getElementById('masZoom').addEventListener('click', () => cambiarZoom(vista.zoom + 1, width / 2, height / 2));
   document.getElementById('menosZoom').addEventListener('click', () => cambiarZoom(vista.zoom - 1, width / 2, height / 2));
+  document.getElementById('botonEmpezar').addEventListener('click', () => {
+    document.getElementById('inicio').classList.add('oculto');
+    jugando = true;
+  });
+
   mostrarAcople();
   rearmarRed();
 }
@@ -355,4 +361,13 @@ function elegirHerramienta(nombre) {
 function keyPressed() {
   const numero = Number(key);
   if (numero >= 1 && numero <= herramientas.length) elegirHerramienta(herramientas[numero - 1].nombre);
+}
+
+// El semáforo del dibujo del inicio alterna con el mismo ciclo que los del mapa.
+function animarSemaforoDeInicio() {
+  if (jugando) return;
+  const fase = mod2pi(millis() / 1000 * animacion * vuelta / parametros.T);
+  const verde = verdeEnPrincipal(fase, parametros.s);
+  document.getElementById('luzVerde').classList.toggle('prendida', verde);
+  document.getElementById('luzRoja').classList.toggle('prendida', !verde);
 }
