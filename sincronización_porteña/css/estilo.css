@@ -160,6 +160,11 @@ button {
   font-size: 13px;
 }
 
+/* Un botón que ocupa toda la fila de la grilla, como el de sonido. */
+.botones .boton.ancho {
+  grid-column: 1 / -1;
+}
+
 /* Deslizador pixel: riel hundido y perilla cuadrada */
 input[type=range] {
   -webkit-appearance: none;

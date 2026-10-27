@@ -124,11 +124,12 @@ function alternarSerie(calle) {
   const yaEsta = series.find(serie => serie.calle === calle);
   if (yaEsta) {
     series = series.filter(serie => serie !== yaEsta);
-    return;
+    return false;
   }
   if (series.length === coloresDeSeries.length) series.shift();
   const color = coloresDeSeries.find(c => !series.some(serie => serie.color === c));
   series.push({ calle, color, datos: [], ultimo: null, objetivo: null });
+  return true;
 }
 
 // Saca las series de calles que ya no existen.

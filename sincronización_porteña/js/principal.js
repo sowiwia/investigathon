@@ -197,6 +197,7 @@ function actualizarIndicadores() {
   if (enEquilibrio && sincronizoEn === null) {
     sincronizoEn = tiempo;
     marcarSincronizacion(tiempo);
+    sonarSincronizacion();
   }
   document.getElementById('valorSincro').textContent = sincronizoEn === null
     ? '–'
@@ -234,7 +235,7 @@ function mostrarNombre() {
 function empezarHerramienta(x, y) {
   señalar(x, y);
   if (herramienta === 'calle' && señalada) {
-    agregarCalle(plano, señalada);
+    if (agregarCalle(plano, señalada)) sonarCalle();
     alCambiarElPlano();
   }
 }
@@ -243,21 +244,27 @@ function empezarHerramienta(x, y) {
 function moverHerramienta(x, y) {
   señalar(x, y);
   if (herramienta !== 'calle' || !señalada) return;
-  if (agregarCalle(plano, señalada)) alCambiarElPlano();
+  if (agregarCalle(plano, señalada)) {
+    sonarCalle();
+    alCambiarElPlano();
+  }
 }
 
 function tocar(x, y) {
   señalar(x, y);
   if (!señalada) return;
   if (herramienta === 'calle') {
-    agregarCalle(plano, señalada);
+    if (agregarCalle(plano, señalada)) sonarCalle();
     alCambiarElPlano();
     return;
   }
   const calle = buscarCalle(plano, señalada);
   if (!calle) return;
-  if (herramienta === 'borrar') quitarCalleYFases(calle);
-  if (herramienta === 'graficar') alternarSerie(calle);
+  if (herramienta === 'borrar') {
+    quitarCalleYFases(calle);
+    sonarBorrar();
+  }
+  if (herramienta === 'graficar') sonarGraficar(alternarSerie(calle));
   alCambiarElPlano();
 }
 
@@ -311,7 +318,10 @@ function prepararInterfaz() {
     rearmarRed();
     reiniciarReloj();
   });
-  document.getElementById('botonMezclar').addEventListener('click', mezclarFases);
+  document.getElementById('botonMezclar').addEventListener('click', () => {
+    mezclarFases();
+    sonarMezclar();
+  });
 
   const niveles = document.getElementById('niveles');
   for (const [clave, nivel] of Object.entries(nivelesDeTransito)) {
@@ -339,9 +349,11 @@ function prepararInterfaz() {
   document.getElementById('botonEmpezar').addEventListener('click', () => {
     document.getElementById('inicio').classList.add('oculto');
     jugando = true;
+    sonarInicio();
   });
 
   pintarIcono(document.getElementById('iconoGirar'), iconoGirar);
+  prepararSonido();
   mostrarAcople();
   rearmarRed();
 }
@@ -353,6 +365,7 @@ function mostrarAcople() {
 
 function elegirHerramienta(nombre) {
   herramienta = nombre;
+  if (jugando) sonarHerramienta();
   for (const h of herramientas) {
     document.getElementById(`herramienta-${h.nombre}`).classList.toggle('elegida', h.nombre === nombre);
   }
