@@ -43,6 +43,7 @@ let autos = [];
 let tiempo = 0;
 let sincronizoEn = null;  // cuánto tardó la red en llegar al equilibrio, en segundos simulados
 let jugando = false;
+let entrada = null;  // la cámara acercándose al Obelisco mientras se va la pantalla de inicio
 
 let mapa;
 let datosDeCalles;
@@ -79,16 +80,18 @@ function setup() {
   const largos = ciudad.calles.map(c => c.largo).sort((a, b) => a - b);
   largoTipico = Math.round(largos[Math.floor(largos.length / 2)]);
 
-  vista.zoom = zoomMinimo;
+  vista.zoom = zoomMinimo();
   centrarVistaEn(640, 360);  // el Obelisco
   mostrarZoom();
   prepararInterfaz();
   crearGraficos();
   escucharGestos(lienzo.elt);
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', () => windowResized());
   aplicarEscenario('microcentro');
 }
 
 function draw() {
+  if (entrada) avanzarEntrada();
   if (jugando) avanzar(Math.min(deltaTime, 100) / 1000 * animacion);
 
   dibujarMundo(mundo, mapa, {
@@ -112,7 +115,7 @@ function draw() {
 function windowResized() {
   const centro = aMundo(width / 2, height / 2);
   resizeCanvas(windowWidth, windowHeight);
-  vista.zoom = constrain(vista.zoom, zoomMinimo, zoomMaximo);
+  vista.zoom = constrain(vista.zoom, zoomMinimo(), zoomMaximo);
   centrarVistaEn(centro.x, centro.y);
   mostrarZoom();
 }
@@ -346,16 +349,30 @@ function prepararInterfaz() {
   }
   document.getElementById('masZoom').addEventListener('click', () => cambiarZoom(vista.zoom + 1, width / 2, height / 2));
   document.getElementById('menosZoom').addEventListener('click', () => cambiarZoom(vista.zoom - 1, width / 2, height / 2));
-  document.getElementById('botonEmpezar').addEventListener('click', () => {
-    document.getElementById('inicio').classList.add('oculto');
-    jugando = true;
-    sonarInicio();
-  });
+  document.getElementById('botonEmpezar').addEventListener('click', empezar);
 
+  prepararBotonDeInterfaz();
   pintarIcono(document.getElementById('iconoGirar'), iconoGirar);
   prepararSonido();
   mostrarAcople();
   rearmarRed();
+}
+
+// El botón de la esquina esconde los paneles de los costados para mirar el mapa sin tapar nada.
+// La barra de herramientas del centro y el cartel de abajo quedan siempre.
+function prepararBotonDeInterfaz() {
+  const boton = document.getElementById('botonInterfaz');
+  const icono = document.createElement('canvas');
+  icono.width = 9;
+  icono.height = 9;
+  pintarIcono(icono, iconos.paneles);
+  boton.appendChild(icono);
+  boton.addEventListener('click', () => {
+    const sinPaneles = document.body.classList.toggle('sinPaneles');
+    boton.classList.toggle('activo', sinPaneles);
+    boton.setAttribute('aria-label', sinPaneles ? 'Mostrar los paneles' : 'Ocultar los paneles');
+    sonarHerramienta();
+  });
 }
 
 function mostrarAcople() {
@@ -377,9 +394,41 @@ function keyPressed() {
   if (numero >= 1 && numero <= herramientas.length) elegirHerramienta(herramientas[numero - 1].nombre);
 }
 
+// Paso del inicio al juego: la pantalla de inicio se desvanece, la cámara se acerca al Obelisco y
+// la interfaz aparece atrás, en vez de aparecer todo de golpe.
+const duracionEntrada = 900;  // ms, igual que la transición de #inicio en el CSS
+const acercamientoDeEntrada = 1.8;
+
+function empezar() {
+  if (jugando) return;
+  const inicio = document.getElementById('inicio');
+  inicio.classList.add('saliendo');
+  inicio.addEventListener('transitionend', () => inicio.classList.add('oculto'), { once: true });
+  document.body.classList.add('enJuego');
+  entrada = {
+    comenzo: millis(),
+    desde: vista.zoom,
+    hasta: constrain(vista.zoom * acercamientoDeEntrada, zoomMinimo(), zoomMaximo),
+  };
+  jugando = true;
+  sonarInicio();
+}
+
+function avanzarEntrada() {
+  const t = Math.min((millis() - entrada.comenzo) / duracionEntrada, 1);
+  const suave = 1 - Math.pow(1 - t, 3);  // arranca rápido y frena al final
+  vista.zoom = entrada.desde + (entrada.hasta - entrada.desde) * suave;
+  centrarVistaEn(640, 360);  // el Obelisco
+  mostrarZoom();
+  if (t === 1) {
+    entrada = null;
+    document.body.classList.add('listo');
+  }
+}
+
 // El semáforo del dibujo del inicio alterna con el mismo ciclo que los del mapa.
 function animarSemaforoDeInicio() {
-  if (jugando) return;
+  if (document.getElementById('inicio').classList.contains('oculto')) return;
   const fase = mod2pi(millis() / 1000 * animacion * vuelta / parametros.T);
   const verde = verdeEnPrincipal(fase, parametros.s);
   document.getElementById('luzVerde').classList.toggle('prendida', verde);

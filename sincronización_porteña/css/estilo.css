@@ -22,6 +22,7 @@
 html, body {
   margin: 0;
   height: 100%;
+  height: 100dvh;  /* en el celular, la altura real sin la barra del navegador */
   overflow: hidden;
   background: var(--fondo);
   color: var(--texto);
@@ -70,12 +71,62 @@ button {
   pointer-events: none;
 }
 
+/* La interfaz aparece recién cuando se va la pantalla de inicio, un poco después que ella. */
+.arriba,
+.costado,
+.monitor,
+.nombreHerramienta,
+.barra,
+.botonInterfaz {
+  opacity: 0;
+  transition: opacity 500ms ease 400ms;
+}
+
+body.enJuego .arriba,
+body.enJuego .costado,
+body.enJuego .monitor,
+body.enJuego .nombreHerramienta,
+body.enJuego .barra,
+body.enJuego .botonInterfaz {
+  opacity: 1;
+}
+
+/* Ya adentro del juego los paneles aparecen y desaparecen enseguida, sin la demora de la entrada. */
+body.listo .costado,
+body.listo .monitor {
+  transition: opacity 200ms ease;
+}
+
+/* El botón de la esquina esconde los paneles de los costados; el centro no se toca. */
+body.listo.sinPaneles .costado,
+body.listo.sinPaneles .monitor,
+body.enJuego.sinPaneles .costado,
+body.enJuego.sinPaneles .monitor {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.botonInterfaz {
+  position: absolute;
+  right: calc(20px + env(safe-area-inset-right));
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  padding: 7px;
+  display: grid;
+  place-items: center;
+}
+
+.botonInterfaz canvas {
+  width: 18px;
+  height: 18px;
+  image-rendering: pixelated;
+}
+
 .arriba {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  padding: 14px 20px 26px;
+  padding: calc(14px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right)) 26px calc(20px + env(safe-area-inset-left));
   background: linear-gradient(var(--fondo) 30%, transparent);
   display: flex;
   align-items: baseline;
@@ -111,8 +162,8 @@ button {
 
 .costado {
   position: absolute;
-  top: 76px;
-  right: 20px;
+  top: calc(76px + env(safe-area-inset-top));
+  right: calc(20px + env(safe-area-inset-right));
   width: 230px;
   display: grid;
   gap: 14px;
@@ -212,7 +263,7 @@ input[type=range]::-moz-range-thumb {
 
 .nombreHerramienta {
   position: absolute;
-  bottom: 92px;
+  bottom: calc(92px + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   font-size: 14px;
@@ -261,7 +312,7 @@ input[type=range]::-moz-range-thumb {
 
 .barra {
   position: absolute;
-  bottom: 18px;
+  bottom: calc(18px + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -313,6 +364,15 @@ input[type=range]::-moz-range-thumb {
   display: flex;
   align-items: center;
   justify-content: center;
+  transform-origin: 50% 50%;
+  transition: opacity 900ms ease, transform 900ms ease;
+}
+
+/* Al empezar, la pantalla de inicio se aclara y se agranda un poco, como si entráramos al mapa. */
+#inicio.saliendo {
+  opacity: 0;
+  transform: scale(1.12);
+  pointer-events: none;
 }
 
 #inicio.oculto {
@@ -472,7 +532,7 @@ h1 .grande {
 
 @media (max-height: 500px) {
   .arriba {
-    padding: 8px 12px 16px;
+    padding: calc(8px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) 16px calc(12px + env(safe-area-inset-left));
     gap: 18px;
   }
 
@@ -495,8 +555,8 @@ h1 .grande {
   }
 
   .costado {
-    top: 44px;
-    right: 10px;
+    top: calc(44px + env(safe-area-inset-top));
+    right: calc(10px + env(safe-area-inset-right));
     width: 190px;
     gap: 6px;
   }
@@ -512,12 +572,18 @@ h1 .grande {
   }
 
   .nombreHerramienta {
-    bottom: 64px;
+    bottom: calc(64px + env(safe-area-inset-bottom));
     font-size: 11px;
   }
 
+  .botonInterfaz {
+    right: calc(10px + env(safe-area-inset-right));
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    padding: 5px;
+  }
+
   .barra {
-    bottom: 8px;
+    bottom: calc(8px + env(safe-area-inset-bottom));
     gap: 3px;
     padding: 3px;
     border-width: 2px;
@@ -580,8 +646,8 @@ h1 .grande {
 
 .monitor {
   position: absolute;
-  left: 20px;
-  bottom: 18px;
+  left: calc(20px + env(safe-area-inset-left));
+  bottom: calc(18px + env(safe-area-inset-bottom));
   width: 340px;
   padding: 10px 12px 8px;
   background: rgba(13, 14, 28, 0.88);
@@ -616,8 +682,8 @@ h1 .grande {
 
 @media (max-height: 500px) {
   .monitor {
-    left: 10px;
-    bottom: 8px;
+    left: calc(10px + env(safe-area-inset-left));
+    bottom: calc(8px + env(safe-area-inset-bottom));
     width: 210px;
     padding: 6px 8px 2px;
     border-width: 2px;

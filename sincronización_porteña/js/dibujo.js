@@ -271,6 +271,8 @@ const iconos = {
   calle: ['.........', '.........', 'ggggggggg', 'aaaaaaaaa', 'wwaawwaaw', 'aaaaaaaaa', 'ggggggggg', '.........', '.........'],
   borrar: ['R.......R', '.R.....R.', '..R...R..', '...R.R...', '....R....', '...R.R...', '..R...R..', '.R.....R.', 'R.......R'],
   graficar: ['w........', 'w......c.', 'w.....c..', 'w....c...', 'w.c..c...', 'wc.cc....', 'w........', 'wwwwwwwww', '.........'],
+  // una pantalla con un panel a cada lado: el botón que los esconde
+  paneles: ['wwwwwwwww', 'wggpppggw', 'wggpppggw', 'wggpppggw', 'wggpppggw', 'wggpppggw', 'wggpppggw', 'wggpppggw', 'wwwwwwwww'],
 };
 
 // Teléfono acostado con una flecha de giro, para el aviso de girar la pantalla (20x20).

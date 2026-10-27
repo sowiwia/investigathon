@@ -1,4 +1,4 @@
-// Vista y gestos. La vista tiene zoom entero y su esquina en píxeles del mundo.
+// Vista y gestos. La vista tiene su zoom y su esquina en píxeles del mundo.
 // Con Pointer Events, el mouse y los dedos usan el mismo código:
 // - un dedo o el botón izquierdo usa la herramienta elegida (tocar o arrastrar);
 // - dos dedos hacen zoom y mueven la vista;
@@ -6,9 +6,16 @@
 
 const vista = { zoom: 2, x: 0, y: 0 };
 
-// Con zoom 1 entra todo el mapa; si sobra pantalla, el mundo queda centrado.
-const zoomMinimo = 1;
 const zoomMaximo = 5;
+// El zoom cambia de a pasos chicos y multiplicativos: así el salto se siente parejo tanto cerca
+// como lejos, y no da el tirón que daba sumar 1.
+const pasoDeZoom = 1.25;
+
+// El zoom más lejano es el que hace que el mundo tape la pantalla entera: con menos quedarían
+// bordes de fondo vacío alrededor del mapa.
+function zoomMinimo() {
+  return Math.max(width / anchoMundo, height / altoMundo);
+}
 
 function aMundo(x, y) {
   return { x: vista.x + x / vista.zoom, y: vista.y + y / vista.zoom };
@@ -28,13 +35,13 @@ function centrarVistaEn(x, y) {
 }
 
 function mostrarZoom() {
-  document.getElementById('valorZoom').textContent = `×${vista.zoom}`;
+  document.getElementById('valorZoom').textContent = `×${vista.zoom.toFixed(1)}`;
 }
 
 // Cambia el zoom dejando quieto el punto del mundo que está bajo (x, y) en la pantalla.
 function cambiarZoom(nuevo, x, y) {
   const punto = aMundo(x, y);
-  vista.zoom = constrain(nuevo, zoomMinimo, zoomMaximo);
+  vista.zoom = constrain(nuevo, zoomMinimo(), zoomMaximo);
   vista.x = punto.x - x / vista.zoom;
   vista.y = punto.y - y / vista.zoom;
   limitarVista();
@@ -127,7 +134,7 @@ function empezarPellizco() {
 // El punto del mundo que quedó entre los dedos sigue entre los dedos mientras se mueven.
 function seguirPellizco() {
   const { medio, distancia } = dedos();
-  vista.zoom = constrain(Math.round(pellizco.zoom * distancia / pellizco.distancia), zoomMinimo, zoomMaximo);
+  vista.zoom = constrain(pellizco.zoom * distancia / pellizco.distancia, zoomMinimo(), zoomMaximo);
   vista.x = pellizco.punto.x - medio.x / vista.zoom;
   vista.y = pellizco.punto.y - medio.y / vista.zoom;
   limitarVista();
@@ -139,6 +146,6 @@ function alGirarRueda(e) {
   e.preventDefault();
   ruedaAcumulada += e.deltaY;
   if (Math.abs(ruedaAcumulada) < 60) return;
-  cambiarZoom(vista.zoom + (ruedaAcumulada < 0 ? 1 : -1), e.offsetX, e.offsetY);
+  cambiarZoom(ruedaAcumulada < 0 ? vista.zoom * pasoDeZoom : vista.zoom / pasoDeZoom, e.offsetX, e.offsetY);
   ruedaAcumulada = 0;
 }
