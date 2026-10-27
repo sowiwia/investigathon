@@ -137,7 +137,8 @@ function avanzar(segundos) {
   sonarCambiosDeSemaforos();
 }
 
-// Junta en un solo golpecito los semáforos que cambiaron de luz en el cuadro.
+// Un golpecito cada vez que cambian de luz los semáforos, espaciado como el medio ciclo que dura
+// cada luz: con el ciclo entero sonando esquina por esquina serían varios por segundo.
 function sonarCambiosDeSemaforos() {
   if (verdes.length !== fases.length) verdes = new Array(fases.length).fill(null);
   let cambios = 0;
@@ -146,7 +147,9 @@ function sonarCambiosDeSemaforos() {
     if (verdes[i] !== null && verdes[i] !== verde) cambios++;
     verdes[i] = verde;
   }
-  if (cambios > 0) sonarSemaforos(cambios, fases.length, ordenDeLaRed(plano, redActual, fases).orden);
+  if (cambios === 0) return;
+  const espera = parametros.T / 2 / animacion * 1000;
+  sonarSemaforos(ordenDeLaRed(plano, redActual, fases).orden, espera);
 }
 
 function rearmarRed() {

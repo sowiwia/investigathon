@@ -238,19 +238,18 @@ function sonarInicio() {
   tocarAcorde([220, 329.63, 440, 587.33], { volumen: 0.05, ataque: 0.18, caida: 1.4, separacion: 0.07 });
 }
 
-// Cambio de luz de un semáforo: un golpecito de madera, uno por cuadro aunque cambien varios.
-// La red sincronizada no cambia todas las luces a la vez, porque cada cuadra guarda su desfase Δ;
-// lo que se empareja es el orden, así que el golpecito sube por la escala y se abre de brillo con
-// él: desordenada suena grave y sorda, ordenada queda aguda y pareja.
-function sonarSemaforos(cuantos, total, orden) {
-  if (!puedeSonar('semaforo', 25)) return;
-  const juntos = total > 0 ? cuantos / total : 0;
+// Cambio de luz de un semáforo: un golpecito de madera. No suena uno por semáforo, que serían
+// varios por segundo, sino uno cada medio ciclo, al ritmo al que cambia de luz un semáforo.
+// La nota la pone el orden de la red: desordenada suena grave y sorda, ordenada aguda y pareja.
+function sonarSemaforos(orden, espera) {
+  if (!puedeSonar('semaforo', espera)) return false;
   const nota = escala[Math.round(constrain(orden, 0, 1) * (escala.length - 1))];
-  const volumen = 0.012 + 0.03 * orden + 0.02 * juntos;
-  tocarRoce({ volumen: volumen * 0.7, caida: 0.03, filtro: 2200 + 2200 * orden });
+  const volumen = 0.03 + 0.05 * orden;
+  tocarRoce({ volumen: volumen * 0.7, caida: 0.04, filtro: 2200 + 2200 * orden });
   tocarNota(nota, {
-    volumen, ataque: 0.002, caida: 0.05 + 0.05 * orden, filtro: 1800 + 2400 * orden, eco: 0.12,
+    volumen, ataque: 0.002, caida: 0.06 + 0.06 * orden, filtro: 1800 + 2400 * orden, eco: 0.15,
   });
+  return true;
 }
 
 // La red llegó al equilibrio: acorde mayor que resuelve, el único sonido que se permite destacar.
