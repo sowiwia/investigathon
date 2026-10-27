@@ -27,6 +27,16 @@ QUnit.module('gráficos', () => {
     assert.strictEqual(desfaseDeCalle(antifase.calle, antifase.red, [1.0, 1.0]).objetivo, Math.PI, 'Δ > π/2');
   });
 
+  QUnit.test('el orden es 1 con los errores parejos y 0 con los errores opuestos', assert => {
+    ciudadDePrueba();
+    const plano = planoCon(ARRIBA_IZQ, ABAJO_IZQ);
+    const red = armarRed(plano, { ...parametrosDePrueba, deltaCero: true });
+
+    assert.strictEqual(ordenDeLaRed(plano, red, [0, 0, 0, 0]).orden, 1, 'las dos cumplidas');
+    assert.ok(ordenDeLaRed(plano, red, [0, 0, 0, Math.PI]).orden < 1e-9, 'una cumplida y la otra en contra');
+    assert.strictEqual(ordenDeLaRed(crearPlano(), red, []).orden, 0, 'sin cuadras no hay orden');
+  });
+
   QUnit.test('se grafican hasta 4 calles, cada una con su color', assert => {
     ciudadDePrueba();
     const plano = planoCon(ARRIBA_IZQ, ARRIBA_DER, ABAJO_IZQ, ABAJO_DER, VERTICAL_2);

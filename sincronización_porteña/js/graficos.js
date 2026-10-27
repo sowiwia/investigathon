@@ -154,6 +154,26 @@ function errorDeCalle(calle, red, fases) {
   return objetivo === null ? null : wrap(desfase - objetivo);
 }
 
+// Parámetro de orden: 1 cuando todas las cuadras están igual de lejos de su objetivo y 0 cuando
+// sus errores apuntan para cualquier lado.
+function ordenDeLaRed(plano, red, fases) {
+  let sumaX = 0;
+  let sumaY = 0;
+  let cuantas = 0;
+  for (const calle of plano.calles) {
+    const error = errorDeCalle(calle, red, fases);
+    if (error === null) continue;
+    sumaX += Math.cos(error);
+    sumaY += Math.sin(error);
+    cuantas++;
+  }
+  return {
+    orden: cuantas === 0 ? 0 : Math.hypot(sumaX, sumaY) / cuantas,
+    angulo: Math.atan2(sumaY, sumaX),
+    cuantas,
+  };
+}
+
 function dibujarRueda(plano, red, fases, tol) {
   const canvas = document.getElementById('rueda');
   const ctx = canvas.getContext('2d');
@@ -172,15 +192,9 @@ function dibujarRueda(plano, red, fases, tol) {
   ctx.arc(medio, medio, radioDeLaRueda, -Math.PI / 2 - tol, -Math.PI / 2 + tol);
   ctx.stroke();
 
-  let sumaX = 0;
-  let sumaY = 0;
-  let cuantas = 0;
   for (const calle of plano.calles) {
     const error = errorDeCalle(calle, red, fases);
     if (error === null) continue;
-    sumaX += Math.cos(error);
-    sumaY += Math.sin(error);
-    cuantas++;
     const x = medio + radioDeLaRueda * Math.sin(error);
     const y = medio - radioDeLaRueda * Math.cos(error);
     const lado = calle.avenida ? 4 : 3;
@@ -188,9 +202,8 @@ function dibujarRueda(plano, red, fases, tol) {
     ctx.fillRect(Math.round(x - lado / 2), Math.round(y - lado / 2), lado, lado);
   }
 
-  const orden = cuantas === 0 ? 0 : Math.hypot(sumaX, sumaY) / cuantas;
+  const { orden, angulo, cuantas } = ordenDeLaRed(plano, red, fases);
   if (cuantas > 0) {
-    const angulo = Math.atan2(sumaY, sumaX);
     ctx.strokeStyle = paleta.texto;
     ctx.lineWidth = 2;
     ctx.beginPath();

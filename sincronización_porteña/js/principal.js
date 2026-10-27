@@ -41,6 +41,7 @@ let redActual = armarRed(plano, parametros);
 let fases = [];
 let autos = [];
 let tiempo = 0;
+let verdes = [];  // qué luz tenía cada semáforo en el cuadro anterior, para oír cuándo cambian
 let sincronizoEn = null;  // cuánto tardó la red en llegar al equilibrio, en segundos simulados
 let jugando = false;
 let entrada = null;  // la cámara acercándose al Obelisco mientras se va la pantalla de inicio
@@ -133,6 +134,19 @@ function avanzar(segundos) {
   }
   tiempo += tramos * pasosPorTramo * dt;
   registrarMuestra(tiempo, redActual, fases);
+  sonarCambiosDeSemaforos();
+}
+
+// Junta en un solo golpecito los semáforos que cambiaron de luz en el cuadro.
+function sonarCambiosDeSemaforos() {
+  if (verdes.length !== fases.length) verdes = new Array(fases.length).fill(null);
+  let cambios = 0;
+  for (let i = 0; i < fases.length; i++) {
+    const verde = verdeEnPrincipal(fases[i], parametros.s);
+    if (verdes[i] !== null && verdes[i] !== verde) cambios++;
+    verdes[i] = verde;
+  }
+  if (cambios > 0) sonarSemaforos(cambios, fases.length, ordenDeLaRed(plano, redActual, fases).orden);
 }
 
 function rearmarRed() {
