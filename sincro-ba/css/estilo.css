@@ -1075,3 +1075,65 @@ body.enJuego .botonGuia {
     bottom: calc(242px + env(safe-area-inset-bottom));
   }
 }
+
+.pestanasMoviles {
+  display: none;
+}
+
+@media (max-width: 700px) and (orientation: portrait) {
+  .pestanasMoviles {
+    position: absolute;
+    z-index: 5;
+    left: calc(8px + env(safe-area-inset-left));
+    right: calc(8px + env(safe-area-inset-right));
+    bottom: calc(72px + env(safe-area-inset-bottom));
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  body.enJuego .pestanasMoviles {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .pestanasMoviles .boton {
+    min-height: 44px;
+    padding: 6px;
+    font-size: 11px;
+  }
+  .costado.cerrada,
+  .monitor.cerrada {
+    display: none;
+  }
+  .costado:not(.cerrada),
+  .monitor:not(.cerrada) {
+    left: calc(8px + env(safe-area-inset-left));
+    right: calc(8px + env(safe-area-inset-right));
+    bottom: calc(122px + env(safe-area-inset-bottom));
+    width: auto;
+  }
+  .costado:not(.cerrada) {
+    max-height: min(38dvh, 300px);
+    overflow: auto;
+  }
+  .monitor:not(.cerrada) {
+    height: 120px;
+    padding: 6px 8px 8px;
+  }
+  .costado > .panelCabecera,
+  .monitor > .panelCabecera {
+    display: none;
+  }
+  .monitor.ampliada:not(.cerrada) {
+    height: auto;
+    max-height: min(44dvh, 360px);
+  }
+  .nombreHerramienta {
+    bottom: calc(270px + env(safe-area-inset-bottom));
+  }
+  body.viendoAjustesMovil .nombreHerramienta,
+  body.graficosAmpliadosMovil .nombreHerramienta {
+    opacity: 0;
+  }
+}

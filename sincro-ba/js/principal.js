@@ -441,6 +441,9 @@ function prepararPaneles() {
   const pantallaChica = window.matchMedia('(max-width: 700px), (max-height: 500px)');
   const celularVertical = window.matchMedia('(max-width: 700px) and (orientation: portrait)');
   const panelGraficos = document.getElementById('panelGraficos');
+  const panelAjustes = document.getElementById('panelAjustes');
+  const pestanaGraficos = document.getElementById('pestanaGraficos');
+  const pestanaAjustes = document.getElementById('pestanaAjustes');
 
   function mostrarPanel(panel, abierto) {
     panel.classList.toggle('cerrada', !abierto);
@@ -458,31 +461,62 @@ function prepararPaneles() {
     for (const panel of paneles) {
       mostrarPanel(panel, !pantallaChica.matches || (panel === panelGraficos && celularVertical.matches));
     }
+    if (celularVertical.matches) {
+      document.body.classList.remove('sinPaneles');
+      const botonInterfaz = document.getElementById('botonInterfaz');
+      botonInterfaz.classList.remove('activo');
+      botonInterfaz.setAttribute('aria-pressed', 'false');
+      botonInterfaz.setAttribute('aria-label', 'Ocultar los paneles');
+    }
+    document.body.classList.remove('viendoAjustesMovil');
+    actualizarPestanas();
     graficoV.resize();
     graficoDesfases.resize();
   }
 
+  function actualizarPestanas() {
+    const graficosActivos = !panelGraficos.classList.contains('cerrada');
+    document.body.classList.toggle('graficosAmpliadosMovil', panelGraficos.classList.contains('ampliada'));
+    pestanaGraficos.textContent = panelGraficos.classList.contains('ampliada') ? 'Gráficos ▾' : 'Gráficos ▴';
+    pestanaGraficos.classList.toggle('activo', graficosActivos);
+    pestanaAjustes.classList.toggle('activo', !graficosActivos);
+    pestanaGraficos.setAttribute('aria-pressed', String(graficosActivos));
+    pestanaAjustes.setAttribute('aria-pressed', String(!graficosActivos));
+  }
+
+  pestanaGraficos.addEventListener('click', () => {
+    if (panelGraficos.classList.contains('cerrada')) {
+      mostrarPanel(panelAjustes, false);
+      mostrarPanel(panelGraficos, true);
+      panelGraficos.classList.remove('ampliada');
+    } else {
+      panelGraficos.classList.toggle('ampliada');
+      mostrarPanel(panelGraficos, true);
+    }
+    document.body.classList.remove('viendoAjustesMovil');
+    actualizarPestanas();
+    graficoV.resize();
+    graficoDesfases.resize();
+    actualizarGraficos();
+    sonarHerramienta();
+  });
+
+  pestanaAjustes.addEventListener('click', () => {
+    panelGraficos.classList.remove('ampliada');
+    mostrarPanel(panelGraficos, false);
+    mostrarPanel(panelAjustes, true);
+    document.body.classList.add('viendoAjustesMovil');
+    actualizarPestanas();
+    sonarHerramienta();
+  });
+
   for (const panel of paneles) {
     panel.querySelector('.panelCabecera').addEventListener('click', () => {
-      if (panel === panelGraficos && celularVertical.matches && !panel.classList.contains('cerrada')) {
-        panel.classList.toggle('ampliada');
-        mostrarPanel(panel, true);
-        graficoV.resize();
-        graficoDesfases.resize();
-        sonarHerramienta();
-        return;
-      }
       const abrir = panel.classList.contains('cerrada');
       if (abrir && pantallaChica.matches) {
         for (const otro of paneles) if (otro !== panel) mostrarPanel(otro, false);
       }
       mostrarPanel(panel, abrir);
-      if (panel.id === 'panelAjustes' && !abrir && celularVertical.matches) {
-        panelGraficos.classList.remove('ampliada');
-        mostrarPanel(panelGraficos, true);
-        graficoV.resize();
-        graficoDesfases.resize();
-      }
       if (abrir && panel.id === 'panelGraficos') {
         graficoV.resize();
         graficoDesfases.resize();
