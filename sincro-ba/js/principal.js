@@ -236,7 +236,7 @@ function aplicarEscenario(clave) {
     const x = (Math.min(...xs) + Math.max(...xs)) / 2;
     const y = (Math.min(...ys) + Math.max(...ys)) / 2;
     const celularVertical = window.matchMedia('(max-width: 700px) and (orientation: portrait)').matches;
-    vista.zoom = celularVertical
+    vista.zoom = clave === 'cordoba' ? zoomMinimo() : celularVertical
       ? constrain(Math.min((width - 40) / (Math.max(...xs) - Math.min(...xs) + 20),
         (height - 340) / (Math.max(...ys) - Math.min(...ys) + 80)), zoomMinimo(), 2.2)
       : Math.max(zoomMinimo(), Math.min(2.2, zoomMaximo));

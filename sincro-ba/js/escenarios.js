@@ -53,7 +53,7 @@ const escenarios = {
   cordoba: {
     nombre: 'Córdoba, una mano', ayuda: 'Onda verde hacia el oeste',
     transito: 'medio', T: 90,
-    armar: () => avenidaDesdeExtremo('Avenida Córdoba', 8),
+    armar: () => cuadrasDe('Avenida Córdoba'),
   },
   dobleMano: {
     nombre: 'Doble mano', ayuda: 'Sáenz Peña: dos sentidos que compiten',

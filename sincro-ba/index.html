@@ -1,23 +1,28 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Sincronización Porteña</title>
   <link rel="stylesheet" href="css/estilo.css?v=sync13">
   <meta name="theme-color" content="#14162a">
   <script src="vendor/p5.min.js?v=1"></script>
 </head>
+
 <body>
   <main id="juego">
     <div id="lienzo"></div>
 
     <header class="arriba">
       <div class="titulo">Sincronización Porteña</div>
-      <div class="indicador"><span id="valorV">0.00</span><small>Potencial V <button class="info" type="button" data-ayuda="V" aria-label="Ayuda sobre potencial V">?</button></small></div>
+      <div class="indicador"><span id="valorV">0.00</span><small>Potencial V <button class="info" type="button"
+            data-ayuda="V" aria-label="Ayuda sobre potencial V">?</button></small></div>
       <div class="indicador"><span id="valorSincro">–</span><small>Tardó en sincronizar</small></div>
       <div class="indicador"><span id="valorTiempo">0 s</span><small>Tiempo</small></div>
-      <div class="estado" id="estado" role="status" aria-live="polite">Sin semáforos</div><button class="info" type="button" data-ayuda="sincronizado" aria-label="Ayuda sobre sincronización">?</button>
+      <div class="estado" id="estado" role="status" aria-live="polite">Sin semáforos</div><button class="info"
+        type="button" data-ayuda="sincronizado" aria-label="Ayuda sobre sincronización">?</button>
     </header>
 
     <aside class="costado panelVentana" id="panelAjustes">
@@ -25,13 +30,18 @@
         <span>Ajustes</span><span class="marcaPanel" aria-hidden="true">−</span>
       </button>
       <div class="panelContenido" id="contenidoAjustes">
-        <div class="zoom">Zoom <button class="boton" type="button" id="menosZoom" aria-label="Alejar">−</button> <span id="valorZoom">×2</span> <button class="boton" type="button" id="masZoom" aria-label="Acercar">+</button></div>
-        <div class="control">
-          <span class="fila"><span>Ciclo T <button class="info" type="button" data-ayuda="T" aria-label="Ayuda sobre ciclo T">?</button></span><span class="valor" id="valorT">90 s</span></span>
-          <span class="fila"><span>Desfase Δ típico <button class="info" type="button" data-ayuda="delta" aria-label="Ayuda sobre desfase">?</button></span><span class="valor" id="valorDelta">–</span></span>
+        <div class="zoom">Zoom <button class="boton" type="button" id="menosZoom" aria-label="Alejar">−</button> <span
+            id="valorZoom">×2</span> <button class="boton" type="button" id="masZoom" aria-label="Acercar">+</button>
         </div>
         <div class="control">
-          <span class="fila"><span>Tránsito <button class="info" type="button" data-ayuda="transito" aria-label="Ayuda sobre tránsito">?</button></span></span>
+          <span class="fila"><span>Ciclo T <button class="info" type="button" data-ayuda="T"
+                aria-label="Ayuda sobre ciclo T">?</button></span><span class="valor" id="valorT">90 s</span></span>
+          <span class="fila"><span>Desfase Δ típico <button class="info" type="button" data-ayuda="delta"
+                aria-label="Ayuda sobre desfase">?</button></span><span class="valor" id="valorDelta">–</span></span>
+        </div>
+        <div class="control">
+          <span class="fila"><span>Tránsito <button class="info" type="button" data-ayuda="transito"
+                aria-label="Ayuda sobre tránsito">?</button></span></span>
           <div class="botones" id="niveles"></div>
         </div>
         <div class="botones acciones">
@@ -74,7 +84,8 @@
     <button class="boton botonGuia" type="button" id="botonGuia" aria-label="Abrir presentación">?</button>
     <div class="guia" id="guia" hidden>
       <strong>Mirá cómo se coordinan los semáforos</strong>
-      <p>La avenida ya está armada y los autos están circulando. Las cuadras se vuelven azules cuando sus semáforos se coordinan. Probá cambiar el tránsito o tocar Mezclar para ver cómo se ordenan otra vez.</p>
+      <p>La avenida ya está armada y los autos están circulando. Las cuadras se vuelven azules cuando sus semáforos se
+        coordinan. Probá cambiar el tránsito o tocar Mezclar para ver cómo se ordenan otra vez.</p>
       <button class="boton" type="button" id="saltarGuia">Entendido</button>
     </div>
     <div class="ayudaEmergente" id="ayudaEmergente" hidden role="tooltip"></div>
@@ -104,7 +115,7 @@
   <script src="vendor/chart.umd.min.js?v=1"></script>
   <script src="js/modelo.js"></script>
   <script src="js/calles.js"></script>
-  <script src="js/escenarios.js?v=sync5"></script>
+  <script src="js/escenarios.js?v=sync6"></script>
   <script src="js/plano.js?v=sync3"></script>
   <script src="js/autos.js?v=sync4"></script>
   <script src="js/paleta.js"></script>
@@ -113,6 +124,7 @@
   <script src="js/gestos.js?v=sync4"></script>
   <script src="js/sonido.js?v=a745ad76c8e7"></script>
   <script src="js/ayuda.js?v=sync3"></script>
-  <script src="js/principal.js?v=sync19"></script>
+  <script src="js/principal.js?v=sync20"></script>
 </body>
+
 </html>

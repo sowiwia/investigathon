@@ -10,6 +10,6 @@ QUnit.module('escenas', () => {
       primera.forEach(c => agregarCalle(plano, c));
       assert.ok(plano.calles.length > 0 && plano.esquinas.length > 1, `${clave}: red válida`);
     }
-    assert.strictEqual(escenarios.cordoba.armar().length, 8, 'Córdoba tiene ocho cuadras');
+    assert.strictEqual(escenarios.cordoba.armar().length, 24, 'Córdoba cubre la avenida en el mapa');
   });
 });
