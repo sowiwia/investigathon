@@ -194,7 +194,6 @@ function dibujarMundo(capa, mapa, escena) {
     dibujarFantasmas(capaCiudad, plano);
     for (const calle of plano.calles) dibujarCalzada(capaCiudad, calle);
     for (let i = 0; i < plano.esquinas.length; i++) dibujarCruce(capaCiudad, plano, i);
-    dibujarObelisco(capaCiudad);
     ciudadAlDia = true;
   }
   capa.image(capaCiudad, 0, 0);
@@ -218,6 +217,7 @@ function dibujarMundo(capa, mapa, escena) {
   for (let i = 0; i < plano.esquinas.length; i++) {
     dibujarSemaforos(capa, plano, i, fases[i], parametros.s, zoom < 2);
   }
+  dibujarObelisco(capa);
 }
 
 const obeliscoChico = [
@@ -239,18 +239,25 @@ const obeliscoChico = [
   'sssSSS',
   'kkkkkk',
 ];
+let capaObelisco = null;
 
 // Obelisco en miniatura, parado en la Plaza de la República: dos píxeles del mundo por píxel
 // del sprite.
 function dibujarObelisco(capa) {
-  const colores = { s: paleta.piedra, S: paleta.piedraSombra, k: paleta.caja };
-  obeliscoChico.forEach((fila, j) => {
-    [...fila].forEach((clave, i) => {
-      if (clave === '.') return;
-      capa.fill(colores[clave]);
-      capa.rect(634 + i * 2, 336 + j * 2, 2, 2);
-    });
-  });
+  if (!capaObelisco) {
+    capaObelisco = createGraphics(12, 34);
+    capaObelisco.pixelDensity(1);
+    capaObelisco.noSmooth();
+    capaObelisco.noStroke();
+    const colores = { s: paleta.piedra, S: paleta.piedraSombra, k: paleta.caja };
+    obeliscoChico.forEach((fila, j) => [...fila].forEach((clave, i) => {
+      if (clave !== '.') {
+        capaObelisco.fill(colores[clave]);
+        capaObelisco.rect(i * 2, j * 2, 2, 2);
+      }
+    }));
+  }
+  capa.image(capaObelisco, 634, 336);
 }
 
 const iconos = {
