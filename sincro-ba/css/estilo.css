@@ -181,7 +181,6 @@ body.enJuego.sinPaneles .monitor {
 }
 
 .costado .boton,
-.costado input,
 .panelCabecera {
   pointer-events: auto;
 }
@@ -258,51 +257,6 @@ body.enJuego.sinPaneles .monitor {
 /* Un botón que ocupa toda la fila de la grilla, como el de sonido. */
 .botones .boton.ancho {
   grid-column: 1 / -1;
-}
-
-/* Deslizador pixel: riel hundido y perilla cuadrada */
-input[type=range] {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 22px;
-  margin: 0;
-  background: transparent;
-  touch-action: none;
-}
-
-input[type=range]::-webkit-slider-runnable-track {
-  height: 6px;
-  background: var(--oscuro);
-  border-top: 2px solid #000;
-  border-bottom: 2px solid var(--luz);
-}
-
-input[type=range]::-moz-range-track {
-  height: 6px;
-  background: var(--oscuro);
-  border-top: 2px solid #000;
-  border-bottom: 2px solid var(--luz);
-}
-
-input[type=range]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 12px;
-  height: 18px;
-  margin-top: -8px;
-  background: var(--texto);
-  border: 0;
-  border-bottom: 3px solid #8a8fb3;
-  border-radius: 0;
-}
-
-input[type=range]::-moz-range-thumb {
-  width: 12px;
-  height: 15px;
-  background: var(--texto);
-  border: 0;
-  border-bottom: 3px solid #8a8fb3;
-  border-radius: 0;
 }
 
 .nombreHerramienta {
@@ -597,10 +551,6 @@ h1 .grande {
     min-height: 40px;
   }
 
-  input[type=range] {
-    height: 32px;
-  }
-
   .nombreHerramienta {
     bottom: calc(64px + env(safe-area-inset-bottom));
     font-size: 11px;
@@ -861,10 +811,6 @@ h1 .grande {
     font-size: 11px;
   }
 
-  input[type=range] {
-    height: 36px;
-  }
-
   .rueda {
     justify-content: center;
   }
@@ -932,4 +878,113 @@ h1 .grande {
     min-height: 48px;
     margin-top: 4px;
   }
+}
+
+.info {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  margin-left: 3px;
+  border: 1px solid var(--luz);
+  border-radius: 0;
+  background: var(--losa);
+  color: var(--atenuado);
+  font-size: 10px;
+  line-height: 1;
+  text-shadow: none;
+  vertical-align: middle;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.info:hover, .info:focus-visible { color: var(--amarillo); border-color: var(--amarillo); }
+.botones.acciones { grid-template-columns: 1fr auto; align-items: center; }
+.botones.acciones #botonReiniciar { grid-column: 1 / -1; }
+.botonGuia { position: absolute; z-index: 4; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom)); transform: translateX(170px); opacity: 0; }
+body.enJuego .botonGuia { opacity: 1; }
+.guia, .ayudaEmergente {
+  position: absolute; z-index: 6; padding: 12px; max-width: min(290px, calc(100vw - 40px));
+  background: rgba(13, 14, 28, .97); border: 3px solid;
+  border-color: var(--luz) var(--oscuro) var(--oscuro) var(--luz);
+  font-size: 11px; line-height: 1.5; box-shadow: 4px 4px 0 var(--sombra);
+}
+.guia { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+.guia p { margin: 8px 0; }
+.guia .boton { margin-top: 6px; }
+.ayudaEmergente { position: fixed; pointer-events: none; }
+[hidden] { display: none !important; }
+@media (max-width: 700px) { .botonGuia { bottom: calc(72px + env(safe-area-inset-bottom)); transform: translateX(145px); } }
+
+/* Lectura cómoda en escritorio; los tamaños compactos de celular quedan arriba. */
+@media (min-width: 701px) and (min-height: 501px) {
+  .guia {
+    width: min(460px, calc(100vw - 80px));
+    max-width: none;
+    padding: 22px 26px;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .guia strong { font-size: 17px; line-height: 1.4; }
+  .guia p { margin: 16px 0; }
+  .guia .boton { font-size: 14px; padding: 10px 16px; }
+
+  .monitor { width: clamp(360px, 34vw, 440px); padding: 14px 16px 10px; }
+  .monitor.cerrada { padding: 0; }
+  .monitor h3 { font-size: 13px; margin-bottom: 7px; }
+  .lienzoGrafico { height: 110px; margin-bottom: 12px; }
+  .leyendaRueda p { font-size: 12px; }
+}
+
+@media (min-width: 981px) and (max-width: 1200px) and (min-height: 501px) {
+  .monitor { bottom: calc(110px + env(safe-area-inset-bottom)); }
+}
+
+/* En celular, los gráficos quedan a la vista mientras el mapa sigue corriendo arriba. */
+@media (max-width: 700px) and (orientation: portrait) {
+  .monitor:not(.cerrada) {
+    top: auto;
+    bottom: calc(72px + env(safe-area-inset-bottom));
+    max-height: none;
+    height: 166px;
+    padding: 5px 8px 7px;
+    overflow: hidden;
+  }
+  .monitor > .panelCabecera {
+    min-height: 28px;
+    margin-bottom: 4px;
+    padding: 3px 8px;
+    font-size: 11px;
+  }
+  .monitor .panelContenido {
+    display: grid;
+    grid-template-columns: 66px minmax(0, 1fr);
+    grid-template-rows: 14px 43px 14px 43px;
+    gap: 2px 6px;
+  }
+  .monitor .rueda {
+    grid-column: 1;
+    grid-row: 1 / 5;
+    margin: 0;
+    align-items: center;
+  }
+  .monitor .rueda canvas { width: 62px; height: 62px; }
+  .monitor .leyendaRueda { display: none; }
+  .monitor h3 { grid-column: 2; margin: 0; font-size: 9px; line-height: 1.3; }
+  .monitor .lienzoGrafico { grid-column: 2; height: 43px; margin: 0; }
+  .monitor .pista { display: none; }
+
+  .monitor.ampliada:not(.cerrada) {
+    height: auto;
+    max-height: min(45dvh, 380px);
+    padding: 8px;
+    overflow: auto;
+  }
+  .monitor.ampliada .panelContenido { display: block; }
+  .monitor.ampliada .rueda { justify-content: center; margin-bottom: 8px; }
+  .monitor.ampliada .rueda canvas { width: 72px; height: 72px; }
+  .monitor.ampliada .leyendaRueda { display: block; }
+  .monitor.ampliada .lienzoGrafico { height: min(16vh, 110px); margin-bottom: 8px; }
+  .monitor.ampliada .pista { display: block; bottom: 38px; }
+  .nombreHerramienta { bottom: calc(242px + env(safe-area-inset-bottom)); }
 }

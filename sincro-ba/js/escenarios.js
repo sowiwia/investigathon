@@ -1,15 +1,13 @@
 // Niveles de tránsito y escenarios de arranque.
 //
-// El nivel de tránsito es cuántos autitos se ven y nada más: son ilustrativos y no entran en el
-// modelo. Lo que decide en cuántos ciclos se ordena la red es el acople K, que tiene su propio
-// control.
+// Cada nivel cambia la cantidad de autos ilustrativos y el acople K del modelo.
 
 // autosPorSegundo es por entrada: cada entrada de la red recibe esa cantidad de autos nuevos por
 // segundo en cada sentido (una calle recibe menos que una avenida, ver autosEnCalle).
 const nivelesDeTransito = {
-  bajo: { nombre: 'Tránsito bajo', autosPorSegundo: 0.04 },
-  medio: { nombre: 'Tránsito medio', autosPorSegundo: 0.1 },
-  alto: { nombre: 'Tránsito alto', autosPorSegundo: 0.2 },
+  bajo: { nombre: 'Tránsito bajo', autosPorSegundo: 0.12, acople: 0.4, cuadrasPorAuto: 4 },
+  medio: { nombre: 'Tránsito medio', autosPorSegundo: 0.3, acople: 1, cuadrasPorAuto: 2 },
+  alto: { nombre: 'Tránsito alto', autosPorSegundo: 0.6, acople: 2, cuadrasPorAuto: 1 },
 };
 
 // Euler necesita dt·K chico; con estos K alcanza de sobra con centésimas de segundo.
@@ -19,11 +17,6 @@ function pasoDeIntegracion(parametros) {
 
 function cuadrasDe(nombre) {
   return ciudad.calles.filter(c => c.nombre === nombre);
-}
-
-function vecinasDe(cuadra) {
-  return [...ciudad.esquinas[cuadra.a].calles, ...ciudad.esquinas[cuadra.b].calles]
-    .filter(otra => otra !== cuadra);
 }
 
 // Arma un corredor: arranca en una cuadra y sigue derecho cuadra a cuadra, eligiendo en cada
@@ -52,67 +45,28 @@ function corredor(cuadra, desdeEsquina, cuantas) {
   return tramos;
 }
 
-// La cuadra más al norte del grupo, con su punta norte: así el corredor se arma hacia el sur.
-// Se miran las dos puntas porque los datos de OSM no garantizan que a sea la punta norte.
-function arranqueDesdeElNorte(cuadras) {
-  const yMasAlNorte = cuadra => Math.min(
-    ciudad.esquinas[cuadra.a].y,
-    ciudad.esquinas[cuadra.b].y,
-  );
-  const cuadra = cuadras.reduce((mejor, c) =>
-    yMasAlNorte(c) < yMasAlNorte(mejor) ? c : mejor);
-  const norte = ciudad.esquinas[cuadra.a].y < ciudad.esquinas[cuadra.b].y ? cuadra.a : cuadra.b;
-  return { cuadra, norte };
-}
-
-// Crece una red desde una cuadra tomando vecinas al azar: así cada partida es distinta.
-function manchaAlAzar(semilla, cuantas) {
-  const elegidas = [semilla];
-  while (elegidas.length < cuantas) {
-    const candidatas = [];
-    for (const cuadra of elegidas) {
-      for (const otra of vecinasDe(cuadra)) {
-        if (otra.clase !== 'peatonal' && !elegidas.includes(otra)) candidatas.push(otra);
-      }
-    }
-    if (candidatas.length === 0) break;
-    elegidas.push(candidatas[Math.floor(Math.random() * candidatas.length)]);
+// Sigue una avenida desde un extremo estable, sin elecciones aleatorias.
+function avenidaDesdeExtremo(nombre, cantidad, extremo) {
+  const cuadras = cuadrasDe(nombre).filter(c => c.mano !== 'no' || nombre.includes('Sáenz'));
+  const extremos = [];
+  for (const c of cuadras) for (const punta of [c.a, c.b]) {
+    if (cuadras.filter(otra => otra.a === punta || otra.b === punta).length === 1) extremos.push({ c, punta });
   }
-  return elegidas;
-}
-
-// Una cuadra cualquiera cerca del Obelisco, que es donde arranca mirando el jugador.
-function cuadraCercaDelObelisco() {
-  const cerca = ciudad.calles.filter(c => c.clase !== 'peatonal' &&
-    Math.hypot(ciudad.esquinas[c.a].x - 640, ciudad.esquinas[c.a].y - 360) < 220);
-  return cerca[Math.floor(Math.random() * cerca.length)];
+  extremos.sort((a, b) => extremo === 'este'
+    ? ciudad.esquinas[b.punta].x - ciudad.esquinas[a.punta].x
+    : ciudad.esquinas[a.punta].x - ciudad.esquinas[b.punta].x);
+  return extremos.length ? corredor(extremos[0].c, extremos[0].punta, cantidad) : cuadras.slice(0, cantidad);
 }
 
 const escenarios = {
-  microcentro: {
-    nombre: 'Microcentro al azar',
-    ayuda: 'Unas cuadras del centro, elegidas al azar',
-    transito: 'medio',
-    T: 90,
-    armar: () => manchaAlAzar(cuadraCercaDelObelisco(), 18),
+  cordoba: {
+    nombre: 'Córdoba, una mano', ayuda: 'Onda verde hacia el oeste',
+    transito: 'medio', T: 90,
+    armar: () => avenidaDesdeExtremo('Avenida Córdoba', 8, 'este'),
   },
-  nueveDeJulio: {
-    nombre: 'Onda verde en la 9 de Julio',
-    ayuda: 'Una calzada de la 9 de Julio, de punta a punta: el desfase se ve de una',
-    transito: 'medio',
-    T: 90,
-    armar: () => {
-      const cuadras = cuadrasDe('Avenida 9 de Julio');
-      if (cuadras.length === 0) return [];
-      const { cuadra, norte } = arranqueDesdeElNorte(cuadras);
-      return corredor(cuadra, norte, 20);
-    },
-  },
-  embotellamiento: {
-    nombre: 'Embotellamiento',
-    ayuda: 'Centro apretado, tránsito alto y ciclo corto: los desfases no se pueden cumplir',
-    transito: 'alto',
-    T: 35,  // con T chico, Δ pasa de π/2 y las dobles manos se van a antifase (ec. 2)
-    armar: () => manchaAlAzar(cuadraCercaDelObelisco(), 26),
+  dobleMano: {
+    nombre: 'Doble mano', ayuda: 'Sáenz Peña: dos sentidos que compiten',
+    transito: 'medio', T: 90,
+    armar: () => avenidaDesdeExtremo('Avenida Presidente Roque Sáenz Peña', 8, 'este'),
   },
 };

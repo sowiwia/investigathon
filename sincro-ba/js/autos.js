@@ -4,7 +4,7 @@
 // Cada auto va por una cuadra, en un sentido (haciaB: de la esquina a hacia la b, o al revés) y por
 // un carril; avance es cuántos metros lleva recorridos de la cuadra.
 //
-// Los autos entran solo por las puntas de la red y siguen derecho hasta que no hay continuación.
+// Los autos nuevos entran solo por las puntas de la red; al abrir una escena ya hay algunos en camino.
 // No doblan ni desaparecen al azar en un cruce: si no hay una cuadra recta con flujo, salen.
 
 const autosEnCalle = 0.3;  // una calle recibe menos autos que una avenida
@@ -13,6 +13,11 @@ const metrosEntreAutos = 16;
 const metrosDeEntrada = 2;  // desde dónde aparece un auto nuevo: saliendo del cruce
 const metrosDeDispersion = 6;  // y cuánto más adelante puede aparecer, para que no entren pegados
 const anguloDerecho = Math.PI / 3;  // hasta acá se considera que una calle sigue derecho
+const acumuladoPorEntrada = new Map();
+
+function reiniciarEntradasDeAutos() {
+  acumuladoPorEntrada.clear();
+}
 
 // Una doble mano tiene uno por sentido (dos si es avenida); una mano única, el doble en un solo sentido.
 function carrilesPorLado(calle) {
@@ -174,6 +179,15 @@ function cuantosNacen(tasa, segundos, azar) {
   return Math.floor(esperados) + (azar() < esperados % 1 ? 1 : 0);
 }
 
+// En la app los autos entran con una cadencia pareja; la fracción se conserva entre cuadros.
+function nacimientosRegulares(calle, haciaB, tasa, segundos) {
+  const clave = `${calle.cuadra.id}-${haciaB}`;
+  const acumulado = (acumuladoPorEntrada.get(clave) || 0) + tasa * segundos;
+  const cantidad = Math.floor(acumulado + 1e-9);
+  acumuladoPorEntrada.set(clave, acumulado - cantidad);
+  return cantidad;
+}
+
 // Un auto nuevo aparece apenas pasado el cruce de arriba, en un carril libre. Devuelve false si no
 // pudo entrar porque la cuadra ya tiene un auto pegado al cruce.
 function agregarAuto(autos, calle, haciaB, azar) {
@@ -195,7 +209,10 @@ function agregarAutosNuevos(autos, plano, parametros, segundos, azar) {
     for (const haciaB of [true, false]) {
       if (!hayFlujo(calle, haciaB) || !esEntradaDeRed(plano, calle, haciaB)) continue;
       const tasa = parametros.autosPorSegundo * (calle.avenida ? 1 : autosEnCalle);
-      for (let k = cuantosNacen(tasa, segundos, azar); k > 0; k--) {
+      const cantidad = parametros.nacimientosRegulares
+        ? nacimientosRegulares(calle, haciaB, tasa, segundos)
+        : cuantosNacen(tasa, segundos, azar);
+      for (let k = cantidad; k > 0; k--) {
         if (autos.length >= maximoDeAutos) return;
         agregarAuto(autos, calle, haciaB, azar);
       }

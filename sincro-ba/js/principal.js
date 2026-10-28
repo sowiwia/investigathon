@@ -14,9 +14,7 @@ const tolCumplido = 0.1;
 // Δ = 2πL/(vT) y se muestran como lectura en vez de dejarlos a mano.
 //
 // flujoCalle y flujoAvenida son el peso K de base, con la avenida llevando diez veces el flujo de
-// la calle, y el deslizador de acople los multiplica por igual. En cuántos ciclos se ordena la red
-// lo decide K contra ω = 2π/T: cuanto más grande, más rápido. Estos valores están pensados para el
-// juego: con K en ×1 la red se ordena en unos segundos y con ×8, casi al instante.
+// la calle. El nivel de tránsito multiplica ese peso y también regula los autos que se ven.
 const parametros = {
   T: 90,
   s: 0.5,
@@ -26,13 +24,8 @@ const parametros = {
   flujoAvenida: 5,
   acople: 1,
   autosPorSegundo: nivelesDeTransito.medio.autosPorSegundo,
+  nacimientosRegulares: true,
 };
-
-// El deslizador va en pasos de 2^(1/4), así el acople barre de ×0.25 a ×8 sin que el extremo lento
-// quede aplastado contra el borde.
-function acopleDeDeslizador(posicion) {
-  return Math.pow(2, posicion / 4);
-}
 
 let plano = crearPlano();
 let redActual = armarRed(plano, parametros);
@@ -61,11 +54,13 @@ function altoDePantalla() {
 }
 
 const herramientas = [
-  { nombre: 'calle', ayuda: 'Calle: tocá o arrastrá sobre una calle para sumarla a la red' },
+  { nombre: 'mirar', ayuda: 'Mirar: arrastrá para mover el mapa' },
+  { nombre: 'calle', ayuda: 'Calle: tocá una calle para sumarla a la red' },
   { nombre: 'borrar', ayuda: 'Borrar: tocá una cuadra para sacarla de la red' },
   { nombre: 'graficar', ayuda: 'Graficar: tocá una cuadra para seguir su desfase' },
 ];
-let herramienta = 'calle';
+let herramienta = 'mirar';
+let escenaActual = 'cordoba';
 
 function preload() {
   mapa = loadImage('assets/mapa_microcentro.png');
@@ -90,12 +85,13 @@ function setup() {
   centrarVistaEn(640, 360);  // el Obelisco
   mostrarZoom();
   prepararInterfaz();
+  prepararAyuda();
   crearGraficos();
   prepararPaneles();
   escucharGestos(lienzo.elt);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', () => windowResized());
   window.addEventListener('orientationchange', () => setTimeout(windowResized, 120));
-  aplicarEscenario('microcentro');
+  aplicarEscenario('cordoba');
 }
 
 function draw() {
@@ -162,25 +158,38 @@ function rearmarRed() {
   sincronizoEn = null;
 }
 
-function alCambiarElPlano() {
+function alCambiarElPlano(azar = Math.random) {
   emparejarFases();
   rearmarRed();
   limpiarSeries(plano);
-  sembrarAutosFaltantes();
+  sembrarAutosFaltantes(azar);
   invalidarCiudad();
 }
 
 // Las entradas nuevas arrancan con un auto de muestra: así no hay que esperar al próximo nacimiento
 // aleatorio para ver que la red quedó con tránsito. En un circuito cerrado, sin entradas, se siembran
 // las cuadras para que no quede vacío.
-function sembrarAutosFaltantes() {
+function sembrarAutosFaltantes(azar = Math.random) {
   const hayEntradas = plano.calles.some(calle => [true, false].some(haciaB =>
     hayFlujo(calle, haciaB) && esEntradaDeRed(plano, calle, haciaB)));
   for (const calle of plano.calles) {
     if (!autos.some(auto => auto.calle === calle)) {
-      sembrarAutosEnCalle(autos, plano, calle, Math.random, !hayEntradas);
+      sembrarAutosEnCalle(autos, plano, calle, azar, !hayEntradas);
     }
   }
+}
+
+// Autos ya en camino al cargar una escena: la densidad inicial sigue el nivel elegido.
+function poblarEscenaConAutos() {
+  const cada = nivelesDeTransito[parametros.transito].cuadrasPorAuto;
+  plano.calles.forEach((calle, i) => {
+    if (i % cada !== 0) return;
+    const haciaB = calle.deAaB;
+    const avance = calle.cuadra.largo * 0.55;
+    if (autos.some(auto => auto.calle === calle && auto.haciaB === haciaB &&
+      auto.carril === 0 && Math.abs(auto.avance - avance) < metrosEntreAutos)) return;
+    autos.push({ calle, haciaB, carril: 0, avance, tono: (i % 6) / 6 });
+  });
 }
 
 function mezclarFases() {
@@ -207,18 +216,40 @@ function reiniciarReloj() {
   reiniciarMuestras();
 }
 
+// Mismo punto de partida para comparar los niveles de tránsito de una escena.
+function fasesIniciales() {
+  return plano.esquinas.map((_, i) => mod2pi(i * 0.13 + (i % 3) * 0.09));
+}
+
 // Pone en la red las cuadras del escenario, con su nivel de tránsito y su período.
 function aplicarEscenario(clave) {
   const escenario = escenarios[clave];
+  reiniciarEntradasDeAutos();
   plano = crearPlano();
   fases = [];
   autos = [];
   for (const cuadra of escenario.armar()) agregarCalle(plano, cuadra);
   parametros.T = escenario.T;
   document.getElementById('valorT').textContent = `${escenario.T} s`;
-  elegirTransito(escenario.transito);
-  alCambiarElPlano();
-  mezclarFases();
+  elegirTransito(escenario.transito, false);
+  alCambiarElPlano(() => 0.5);
+  poblarEscenaConAutos();
+  escenaActual = clave;
+  fases = fasesIniciales();
+  reiniciarReloj();
+  if (plano.esquinas.length) {
+    const xs = plano.esquinas.map(e => e.x);
+    const ys = plano.esquinas.map(e => e.y);
+    const x = (Math.min(...xs) + Math.max(...xs)) / 2;
+    const y = (Math.min(...ys) + Math.max(...ys)) / 2;
+    const celularVertical = window.matchMedia('(max-width: 700px) and (orientation: portrait)').matches;
+    vista.zoom = celularVertical
+      ? constrain(Math.min((width - 40) / (Math.max(...xs) - Math.min(...xs) + 20),
+        (height - 340) / (Math.max(...ys) - Math.min(...ys) + 80)), zoomMinimo(), 2.2)
+      : Math.max(zoomMinimo(), Math.min(2.2, zoomMaximo));
+    centrarVistaEn(x, y);
+    mostrarZoom();
+  }
   for (const boton of document.querySelectorAll('#escenarios .boton')) {
     const activo = boton.dataset.escenario === clave;
     boton.classList.toggle('activo', activo);
@@ -226,11 +257,21 @@ function aplicarEscenario(clave) {
   }
 }
 
-// Solo cambia cuántos autitos se ven: no toca el modelo, así que no rearma la red ni reinicia el
-// cronómetro de sincronización.
-function elegirTransito(clave) {
+// El nivel de tránsito cambia autos visibles y acople K; el equilibrio se calcula de nuevo.
+function elegirTransito(clave, actualizarModelo = true) {
+  const cambio = parametros.transito !== clave;
   parametros.transito = clave;
   parametros.autosPorSegundo = nivelesDeTransito[clave].autosPorSegundo;
+  parametros.acople = nivelesDeTransito[clave].acople;
+  if (actualizarModelo && cambio) {
+    reiniciarEntradasDeAutos();
+    autos = [];
+    sembrarAutosFaltantes(() => 0.5);
+    poblarEscenaConAutos();
+    fases = fasesIniciales();
+    rearmarRed();
+    reiniciarReloj();
+  }
   for (const boton of document.querySelectorAll('#niveles .boton')) {
     const activo = boton.dataset.nivel === clave;
     boton.classList.toggle('activo', activo);
@@ -288,15 +329,7 @@ function mostrarNombre() {
   }
 }
 
-function empezarHerramienta(x, y) {
-  señalar(x, y);
-  if (herramienta === 'calle' && señalada) {
-    if (agregarCalle(plano, señalada)) sonarCalle();
-    alCambiarElPlano();
-  }
-}
-
-// Con la herramienta Calle, arrastrar el dedo va sumando a la red todas las cuadras que toca.
+// Con la herramienta Calle, arrastrar con el mouse va sumando a la red todas las cuadras que toca.
 function moverHerramienta(x, y) {
   señalar(x, y);
   if (herramienta !== 'calle' || !señalada) return;
@@ -308,7 +341,7 @@ function moverHerramienta(x, y) {
 
 function tocar(x, y) {
   señalar(x, y);
-  if (!señalada) return;
+  if (!señalada || herramienta === 'mirar') return;
   if (herramienta === 'calle') {
     if (agregarCalle(plano, señalada)) sonarCalle();
     alCambiarElPlano();
@@ -348,6 +381,7 @@ function prepararInterfaz() {
     ranura.className = 'ranura';
     ranura.id = `herramienta-${h.nombre}`;
     ranura.setAttribute('aria-label', h.ayuda);
+    ranura.dataset.ayuda = h.nombre;
     ranura.setAttribute('aria-pressed', 'false');
     ranura.innerHTML = `<span class="tecla">${i + 1}</span>`;
     const icono = document.createElement('canvas');
@@ -375,12 +409,7 @@ function prepararInterfaz() {
 
   elegirHerramienta(herramienta);
 
-  document.getElementById('deslizadorAcople').addEventListener('input', e => {
-    parametros.acople = acopleDeDeslizador(Number(e.target.value));
-    mostrarAcople();
-    rearmarRed();
-    reiniciarReloj();
-  });
+  document.getElementById('botonReiniciar').addEventListener('click', () => aplicarEscenario(escenaActual));
   document.getElementById('botonMezclar').addEventListener('click', () => {
     mezclarFases();
     sonarMezclar();
@@ -418,7 +447,6 @@ function prepararInterfaz() {
 
   prepararBotonDeInterfaz();
   prepararSonido();
-  mostrarAcople();
   rearmarRed();
 }
 
@@ -428,6 +456,8 @@ function prepararInterfaz() {
 function prepararPaneles() {
   const paneles = [...document.querySelectorAll('.panelVentana')];
   const pantallaChica = window.matchMedia('(max-width: 700px), (max-height: 500px)');
+  const celularVertical = window.matchMedia('(max-width: 700px) and (orientation: portrait)');
+  const panelGraficos = document.getElementById('panelGraficos');
 
   function mostrarPanel(panel, abierto) {
     panel.classList.toggle('cerrada', !abierto);
@@ -437,13 +467,29 @@ function prepararPaneles() {
   }
 
   for (const panel of paneles) {
-    mostrarPanel(panel, !pantallaChica.matches);
+    mostrarPanel(panel, !pantallaChica.matches || (panel === panelGraficos && celularVertical.matches));
     panel.querySelector('.panelCabecera').addEventListener('click', () => {
+      if (panel === panelGraficos && celularVertical.matches && !panel.classList.contains('cerrada')) {
+        panel.classList.toggle('ampliada');
+        panel.querySelector('.marcaPanel').textContent = panel.classList.contains('ampliada') ? '▾' : '▴';
+        graficoV.resize();
+        graficoDesfases.resize();
+        sonarHerramienta();
+        return;
+      }
       const abrir = panel.classList.contains('cerrada');
       if (abrir && pantallaChica.matches) {
         for (const otro of paneles) if (otro !== panel) mostrarPanel(otro, false);
       }
       mostrarPanel(panel, abrir);
+      if (panel === panelGraficos && celularVertical.matches && abrir) panel.querySelector('.marcaPanel').textContent = '▴';
+      if (panel.id === 'panelAjustes' && !abrir && celularVertical.matches) {
+        mostrarPanel(panelGraficos, true);
+        panelGraficos.classList.remove('ampliada');
+        panelGraficos.querySelector('.marcaPanel').textContent = '▴';
+        graficoV.resize();
+        graficoDesfases.resize();
+      }
       if (abrir && panel.id === 'panelGraficos') {
         graficoV.resize();
         graficoDesfases.resize();
@@ -461,8 +507,18 @@ function prepararPaneles() {
   }
 
   pantallaChica.addEventListener('change', e => {
-    for (const panel of paneles) mostrarPanel(panel, !e.matches);
+    for (const panel of paneles) mostrarPanel(panel, !e.matches || (panel === panelGraficos && celularVertical.matches));
+    panelGraficos.classList.remove('ampliada');
+    if (celularVertical.matches) panelGraficos.querySelector('.marcaPanel').textContent = '▴';
   });
+  celularVertical.addEventListener('change', () => {
+    for (const panel of paneles) mostrarPanel(panel, !pantallaChica.matches || (panel === panelGraficos && celularVertical.matches));
+    panelGraficos.classList.remove('ampliada');
+    if (celularVertical.matches) panelGraficos.querySelector('.marcaPanel').textContent = '▴';
+    graficoV.resize();
+    graficoDesfases.resize();
+  });
+  if (celularVertical.matches) panelGraficos.querySelector('.marcaPanel').textContent = '▴';
 }
 
 // El botón de la esquina esconde los paneles de los costados para mirar el mapa sin tapar nada.
@@ -485,11 +541,6 @@ function prepararBotonDeInterfaz() {
   });
 }
 
-function mostrarAcople() {
-  const m = parametros.acople;
-  document.getElementById('valorAcople').textContent = `×${m < 1 ? m.toFixed(2) : m.toFixed(1)}`;
-}
-
 function elegirHerramienta(nombre) {
   herramienta = nombre;
   if (jugando) sonarHerramienta();
@@ -507,14 +558,12 @@ function keyPressed() {
   if (numero >= 1 && numero <= herramientas.length) elegirHerramienta(herramientas[numero - 1].nombre);
 }
 
-// Paso del inicio al juego: la pantalla de inicio se desvanece, la cámara se acerca al Obelisco y
-// la interfaz aparece atrás, en vez de aparecer todo de golpe.
+// Paso del inicio al juego: se desvanece la pantalla de inicio y aparece la escena ya encuadrada.
 const duracionEntrada = 900;  // ms, igual que la transición de #inicio en el CSS
-const acercamientoDeEntrada = 1.8;
 
 function empezar() {
-  if (jugando) return;
   const inicio = document.getElementById('inicio');
+  if (inicio.classList.contains('saliendo')) return;
   inicio.classList.add('saliendo');
   const ocultarInicio = () => inicio.classList.add('oculto');
   inicio.addEventListener('transitionend', ocultarInicio, { once: true });
@@ -522,9 +571,15 @@ function empezar() {
   document.body.classList.add('enJuego');
   entrada = {
     comenzo: millis(),
+    centro: { x: vista.x + width / vista.zoom / 2, y: vista.y + height / vista.zoom / 2 },
     desde: vista.zoom,
-    hasta: constrain(vista.zoom * acercamientoDeEntrada, zoomMinimo(), zoomMaximo),
+    hasta: vista.zoom,
   };
+  document.getElementById('guia').hidden = false;
+}
+
+function confirmarPresentacion() {
+  if (jugando) return;
   jugando = true;
   sonarInicio();
 }
@@ -533,7 +588,7 @@ function avanzarEntrada() {
   const t = Math.min((millis() - entrada.comenzo) / duracionEntrada, 1);
   const suave = 1 - Math.pow(1 - t, 3);  // arranca rápido y frena al final
   vista.zoom = entrada.desde + (entrada.hasta - entrada.desde) * suave;
-  centrarVistaEn(640, 360);  // el Obelisco
+  centrarVistaEn(entrada.centro.x, entrada.centro.y);
   mostrarZoom();
   if (t === 1) {
     entrada = null;

@@ -61,7 +61,7 @@ function rolDeCalle(plano, calle, indiceEnPlano) {
   return rolEn(plano.esquinas[indiceEnPlano].ciudad, calle.cuadra);
 }
 
-// Peso K de una cuadra: su flujo base por el multiplicador del deslizador de acople.
+// Peso K de una cuadra: su flujo base por el multiplicador del nivel de tránsito.
 function acopleDeCalle(calle, parametros) {
   return (calle.avenida ? parametros.flujoAvenida : parametros.flujoCalle) * parametros.acople;
 }

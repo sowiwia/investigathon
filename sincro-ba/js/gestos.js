@@ -1,6 +1,7 @@
 // Vista y gestos. La vista tiene su zoom y su esquina en píxeles del mundo.
 // Con Pointer Events, el mouse y los dedos usan el mismo código:
-// - un dedo o el botón izquierdo usa la herramienta elegida (tocar o arrastrar);
+// - un dedo toca la herramienta elegida; si arrastra, mueve el mapa;
+// - con el mouse, el botón izquierdo usa la herramienta y arrastrar sigue pintando calles;
 // - dos dedos hacen zoom y mueven la vista;
 // - en la computadora, la rueda hace zoom y el botón derecho o del medio mueve la vista.
 
@@ -14,6 +15,9 @@ const pasoDeZoom = 1.25;
 // El zoom más lejano es el que hace que el mundo tape la pantalla entera: con menos quedarían
 // bordes de fondo vacío alrededor del mapa.
 function zoomMinimo() {
+  if (window.matchMedia('(max-width: 700px) and (orientation: portrait)').matches) {
+    return Math.max(width / anchoMundo, (height - 240) / altoMundo);
+  }
   return Math.max(width / anchoMundo, height / altoMundo);
 }
 
@@ -75,8 +79,14 @@ function alApoyar(e) {
     toque = null;
     empezarPellizco();
   } else if (punteros.size === 1) {
-    toque = { id: e.pointerId, x: e.offsetX, y: e.offsetY, movido: false };
-    empezarHerramienta(e.offsetX, e.offsetY);
+    toque = {
+      id: e.pointerId,
+      x: e.offsetX,
+      y: e.offsetY,
+      movido: false,
+      tipo: e.pointerType,
+    };
+    señalar(e.offsetX, e.offsetY);
   }
 }
 
@@ -86,6 +96,7 @@ function alMover(e) {
     if (punteros.size === 0) señalar(e.offsetX, e.offsetY);
     return;
   }
+  const anterior = punteros.get(e.pointerId);
   punteros.set(e.pointerId, { x: e.offsetX, y: e.offsetY });
 
   if (pellizco && punteros.size === 2) {
@@ -97,8 +108,24 @@ function alMover(e) {
     limitarVista();
   } else if (toque && toque.id === e.pointerId) {
     // un toque que se movió más de unos píxeles ya es un arrastre
-    if (dist(e.offsetX, e.offsetY, toque.x, toque.y) > 8) toque.movido = true;
-    moverHerramienta(e.offsetX, e.offsetY);
+    if (!toque.movido && dist(e.offsetX, e.offsetY, toque.x, toque.y) > 8) {
+      toque.movido = true;
+      if (toque.tipo === 'mouse' && herramienta !== 'mirar') {
+        moverHerramienta(toque.x, toque.y);
+      } else {
+        señalada = null;
+        mostrarNombre();
+      }
+    }
+    if (!toque.movido) return;
+    if (toque.tipo === 'mouse' && herramienta !== 'mirar') {
+      moverHerramienta(e.offsetX, e.offsetY);
+    } else {
+      // En Mirar o con un dedo, arrastrar mueve el mapa.
+      vista.x -= (e.offsetX - anterior.x) / vista.zoom;
+      vista.y -= (e.offsetY - anterior.y) / vista.zoom;
+      limitarVista();
+    }
   }
 }
 

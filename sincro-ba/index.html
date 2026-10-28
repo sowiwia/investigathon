@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Sincronización Porteña</title>
-  <link rel="stylesheet" href="css/estilo.css?v=sync6">
+  <link rel="stylesheet" href="css/estilo.css?v=sync11">
   <meta name="theme-color" content="#14162a">
   <script src="vendor/p5.min.js?v=1"></script>
 </head>
@@ -14,10 +14,10 @@
 
     <header class="arriba">
       <div class="titulo">Sincronización Porteña</div>
-      <div class="indicador"><span id="valorV">0.00</span><small>Potencial V</small></div>
+      <div class="indicador"><span id="valorV">0.00</span><small>Potencial V <button class="info" type="button" data-ayuda="V" aria-label="Ayuda sobre potencial V">?</button></small></div>
       <div class="indicador"><span id="valorSincro">–</span><small>Tardó en sincronizar</small></div>
       <div class="indicador"><span id="valorTiempo">0 s</span><small>Tiempo</small></div>
-      <div class="estado" id="estado" role="status" aria-live="polite">Sin semáforos</div>
+      <div class="estado" id="estado" role="status" aria-live="polite">Sin semáforos</div><button class="info" type="button" data-ayuda="sincronizado" aria-label="Ayuda sobre sincronización">?</button>
     </header>
 
     <aside class="costado panelVentana" id="panelAjustes">
@@ -26,23 +26,19 @@
       </button>
       <div class="panelContenido" id="contenidoAjustes">
         <div class="zoom">Zoom <button class="boton" type="button" id="menosZoom" aria-label="Alejar">−</button> <span id="valorZoom">×2</span> <button class="boton" type="button" id="masZoom" aria-label="Acercar">+</button></div>
-        <label class="control">
-          <span class="fila"><span>Acople K</span><span class="valor" id="valorAcople">×1.0</span></span>
-          <input type="range" id="deslizadorAcople" min="-8" max="12" step="1" value="0">
-        </label>
         <div class="control">
-          <span class="fila"><span>Ciclo T</span><span class="valor" id="valorT">90 s</span></span>
-          <span class="fila"><span>Desfase Δ típico</span><span class="valor" id="valorDelta">–</span></span>
+          <span class="fila"><span>Ciclo T <button class="info" type="button" data-ayuda="T" aria-label="Ayuda sobre ciclo T">?</button></span><span class="valor" id="valorT">90 s</span></span>
+          <span class="fila"><span>Desfase Δ típico <button class="info" type="button" data-ayuda="delta" aria-label="Ayuda sobre desfase">?</button></span><span class="valor" id="valorDelta">–</span></span>
         </div>
         <div class="control">
-          <span class="fila"><span>Tránsito</span></span>
+          <span class="fila"><span>Tránsito <button class="info" type="button" data-ayuda="transito" aria-label="Ayuda sobre tránsito">?</button></span></span>
           <div class="botones" id="niveles"></div>
         </div>
-        <div class="botones">
-          <button class="boton" type="button" id="botonMezclar">Mezclar</button>
+        <div class="botones acciones">
+          <button class="boton" type="button" id="botonMezclar">Mezclar</button><button class="info" type="button" data-ayuda="mezclar" aria-label="Ayuda sobre Mezclar">?</button><button class="boton" type="button" id="botonReiniciar">Reiniciar escena</button>
         </div>
         <div class="control">
-          <span class="fila"><span>Escenarios</span></span>
+          <span class="fila"><span>Escenas</span></span>
           <div class="botones columna" id="escenarios"></div>
         </div>
       </div>
@@ -68,6 +64,9 @@
       </div>
     </div>
 
+    <button class="boton botonGuia" type="button" id="botonGuia" aria-label="Abrir presentación">?</button>
+    <div class="guia" id="guia" hidden><strong>Mirá cómo se coordinan los semáforos</strong><p>La avenida ya está armada y los autos están circulando. Las cuadras se vuelven azules cuando sus semáforos se coordinan. Probá cambiar el tránsito o tocar Mezclar para ver cómo se ordenan otra vez.</p><button class="boton" type="button" id="saltarGuia">Entendido</button></div>
+    <div class="ayudaEmergente" id="ayudaEmergente" hidden role="tooltip"></div>
     <div class="nombreHerramienta" id="nombreHerramienta"></div>
     <nav class="barra" id="barra" aria-label="Herramientas"></nav>
     <button class="boton botonInterfaz" id="botonInterfaz" aria-label="Ocultar los paneles"></button>
@@ -94,14 +93,15 @@
   <script src="vendor/chart.umd.min.js?v=1"></script>
   <script src="js/modelo.js"></script>
   <script src="js/calles.js"></script>
-  <script src="js/escenarios.js"></script>
-  <script src="js/plano.js?v=sync2"></script>
-  <script src="js/autos.js?v=sync3"></script>
+  <script src="js/escenarios.js?v=sync4"></script>
+  <script src="js/plano.js?v=sync3"></script>
+  <script src="js/autos.js?v=sync4"></script>
   <script src="js/paleta.js"></script>
-  <script src="js/dibujo.js?v=sync1"></script>
+  <script src="js/dibujo.js?v=sync3"></script>
   <script src="js/graficos.js?v=sync3"></script>
-  <script src="js/gestos.js?v=sync1"></script>
+  <script src="js/gestos.js?v=sync4"></script>
   <script src="js/sonido.js?v=a745ad76c8e7"></script>
-  <script src="js/principal.js?v=sync9"></script>
+  <script src="js/ayuda.js?v=sync3"></script>
+  <script src="js/principal.js?v=sync16"></script>
 </body>
 </html>

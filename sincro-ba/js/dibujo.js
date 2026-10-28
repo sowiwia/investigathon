@@ -268,6 +268,7 @@ function dibujarObelisco(capa) {
 
 // Íconos de 9x9 para la barra de herramientas.
 const iconos = {
+  mirar: ['.........', '..wwwww..', '.w.....w.', 'w...c...w', 'w..ccc..w', 'w...c...w', '.w.....w.', '..wwwww..', '.........'],
   calle: ['.........', '.........', 'ggggggggg', 'aaaaaaaaa', 'wwaawwaaw', 'aaaaaaaaa', 'ggggggggg', '.........', '.........'],
   borrar: ['R.......R', '.R.....R.', '..R...R..', '...R.R...', '....R....', '...R.R...', '..R...R..', '.R.....R.', 'R.......R'],
   graficar: ['w........', 'w......c.', 'w.....c..', 'w....c...', 'w.c..c...', 'wc.cc....', 'w........', 'wwwwwwwww', '.........'],

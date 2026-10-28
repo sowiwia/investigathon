@@ -25,6 +25,27 @@ function manoUnica(calle) {
 QUnit.module('autos', hooks => {
   hooks.beforeEach(ciudadDePrueba);
 
+  QUnit.test('las entradas mantienen una cadencia acorde al nivel de tránsito', assert => {
+    const calle = planoCon(ARRIBA_IZQ).calles[0];
+    const cantidades = [];
+    for (const tasa of [0.12, 0.3, 0.6]) {
+      reiniciarEntradasDeAutos();
+      let total = 0;
+      const intervalos = [];
+      for (let i = 0; i < 100; i++) {
+        const nuevos = nacimientosRegulares(calle, true, tasa, 0.25);
+        total += nuevos;
+        if (nuevos) intervalos.push(i);
+      }
+      cantidades.push(total);
+      if (intervalos.length > 2) {
+        const espacios = intervalos.slice(1).map((paso, i) => paso - intervalos[i]);
+        assert.ok(Math.max(...espacios) - Math.min(...espacios) <= 1, 'cadencia pareja');
+      }
+    }
+    assert.deepEqual(cantidades, [3, 7, 15], 'bajo, medio y alto crecen con la tasa');
+  });
+
   QUnit.test('avanzan a la velocidad v', assert => {
     const plano = planoCon(ARRIBA_IZQ);
     const calle = manoUnica(plano.calles[0]);
