@@ -1,5 +1,3 @@
-// Estado del juego, simulación, interfaz y herramientas.
-
 const pasosMaximosPorCuadro = 300;
 // Un segundo y medio simulado por segundo real: los autos se pueden seguir con la vista y un ciclo
 // de semáforo de 90 s tarda un minuto en pantalla.
@@ -34,7 +32,7 @@ let autos = [];
 let tiempo = 0;
 let sincronizoEn = null;  // cuánto tardó la red en tener todas sus calles azules
 let jugando = false;
-let entrada = null;  // la cámara acercándose al Obelisco mientras se va la pantalla de inicio
+let entrada = null;
 
 let mapa;
 let datosDeCalles;
@@ -128,8 +126,6 @@ function windowResized() {
   mostrarZoom();
 }
 
-// Simulación
-
 function avanzar(segundos) {
   const dt = pasoDeIntegracion(parametros);
   const pasos = Math.min(Math.round(segundos / dt), pasosMaximosPorCuadro);
@@ -197,7 +193,6 @@ function mezclarFases() {
   reiniciarReloj();
 }
 
-// Saca todas las cuadras de la red y deja el tablero limpio.
 function vaciarRed() {
   plano = crearPlano();
   fases = [];
@@ -209,7 +204,6 @@ function vaciarRed() {
   sonarBorrar();
 }
 
-// El cronómetro de sincronización arranca de nuevo cada vez que cambia algo que mueve el equilibrio.
 function reiniciarReloj() {
   tiempo = 0;
   sincronizoEn = null;
@@ -221,7 +215,6 @@ function fasesIniciales() {
   return plano.esquinas.map((_, i) => mod2pi(i * 0.13 + (i % 3) * 0.09));
 }
 
-// Pone en la red las cuadras del escenario, con su nivel de tránsito y su período.
 function aplicarEscenario(clave) {
   const escenario = escenarios[clave];
   reiniciarEntradasDeAutos();
@@ -257,7 +250,6 @@ function aplicarEscenario(clave) {
   }
 }
 
-// El nivel de tránsito cambia autos visibles y acople K; el equilibrio se calcula de nuevo.
 function elegirTransito(clave, actualizarModelo = true) {
   const cambio = parametros.transito !== clave;
   parametros.transito = clave;
@@ -303,14 +295,11 @@ function detectarSincronizacion() {
   sonarSincronizacion();
 }
 
-// Herramientas. Reciben posiciones de la pantalla; gestos.js decide si fue un toque o un arrastre.
-
 // Radio para acertar con el dedo: unos 20 px de pantalla.
 function radioDeToque() {
   return Math.max(6, 20 / vista.zoom);
 }
 
-// Qué cuadra está bajo el dedo, para iluminarla antes de tocar.
 function señalar(x, y) {
   const p = aMundo(x, y);
   señalada = calleCercana(p.x, p.y, radioDeToque());
@@ -365,13 +354,10 @@ function quitarCalleYFases(calle) {
   fases = fases.filter((fase, i) => quedan.has(antes[i]));
 }
 
-// Cada esquina nueva arranca con una fase al azar.
 function emparejarFases() {
   while (fases.length < plano.esquinas.length) fases.push(Math.random() * vuelta);
   fases.length = plano.esquinas.length;
 }
-
-// Interfaz
 
 function prepararInterfaz() {
   const barra = document.getElementById('barra');
@@ -450,9 +436,6 @@ function prepararInterfaz() {
   rearmarRed();
 }
 
-// Cada ventana se puede plegar por separado. En pantallas chicas (celular vertical u horizontal)
-// se inicia con las dos cerradas y, al abrir una, se cierra la otra para que el mapa no quede
-// cubierto por dos capas.
 function prepararPaneles() {
   const paneles = [...document.querySelectorAll('.panelVentana')];
   const pantallaChica = window.matchMedia('(max-width: 700px), (max-height: 500px)');
@@ -463,15 +446,27 @@ function prepararPaneles() {
     panel.classList.toggle('cerrada', !abierto);
     const boton = panel.querySelector('.panelCabecera');
     boton.setAttribute('aria-expanded', String(abierto));
-    boton.querySelector('.marcaPanel').textContent = abierto ? '−' : '+';
+    let marca = abierto ? '−' : '+';
+    if (abierto && panel === panelGraficos && celularVertical.matches) {
+      marca = panel.classList.contains('ampliada') ? '▾' : '▴';
+    }
+    boton.querySelector('.marcaPanel').textContent = marca;
+  }
+
+  function ajustarPaneles() {
+    panelGraficos.classList.remove('ampliada');
+    for (const panel of paneles) {
+      mostrarPanel(panel, !pantallaChica.matches || (panel === panelGraficos && celularVertical.matches));
+    }
+    graficoV.resize();
+    graficoDesfases.resize();
   }
 
   for (const panel of paneles) {
-    mostrarPanel(panel, !pantallaChica.matches || (panel === panelGraficos && celularVertical.matches));
     panel.querySelector('.panelCabecera').addEventListener('click', () => {
       if (panel === panelGraficos && celularVertical.matches && !panel.classList.contains('cerrada')) {
         panel.classList.toggle('ampliada');
-        panel.querySelector('.marcaPanel').textContent = panel.classList.contains('ampliada') ? '▾' : '▴';
+        mostrarPanel(panel, true);
         graficoV.resize();
         graficoDesfases.resize();
         sonarHerramienta();
@@ -482,11 +477,9 @@ function prepararPaneles() {
         for (const otro of paneles) if (otro !== panel) mostrarPanel(otro, false);
       }
       mostrarPanel(panel, abrir);
-      if (panel === panelGraficos && celularVertical.matches && abrir) panel.querySelector('.marcaPanel').textContent = '▴';
       if (panel.id === 'panelAjustes' && !abrir && celularVertical.matches) {
-        mostrarPanel(panelGraficos, true);
         panelGraficos.classList.remove('ampliada');
-        panelGraficos.querySelector('.marcaPanel').textContent = '▴';
+        mostrarPanel(panelGraficos, true);
         graficoV.resize();
         graficoDesfases.resize();
       }
@@ -505,24 +498,11 @@ function prepararPaneles() {
       sonarHerramienta();
     });
   }
-
-  pantallaChica.addEventListener('change', e => {
-    for (const panel of paneles) mostrarPanel(panel, !e.matches || (panel === panelGraficos && celularVertical.matches));
-    panelGraficos.classList.remove('ampliada');
-    if (celularVertical.matches) panelGraficos.querySelector('.marcaPanel').textContent = '▴';
-  });
-  celularVertical.addEventListener('change', () => {
-    for (const panel of paneles) mostrarPanel(panel, !pantallaChica.matches || (panel === panelGraficos && celularVertical.matches));
-    panelGraficos.classList.remove('ampliada');
-    if (celularVertical.matches) panelGraficos.querySelector('.marcaPanel').textContent = '▴';
-    graficoV.resize();
-    graficoDesfases.resize();
-  });
-  if (celularVertical.matches) panelGraficos.querySelector('.marcaPanel').textContent = '▴';
+  ajustarPaneles();
+  pantallaChica.addEventListener('change', ajustarPaneles);
+  celularVertical.addEventListener('change', ajustarPaneles);
 }
 
-// El botón de la esquina esconde los paneles de los costados para mirar el mapa sin tapar nada.
-// La barra de herramientas del centro y el cartel de abajo quedan siempre.
 function prepararBotonDeInterfaz() {
   const boton = document.getElementById('botonInterfaz');
   boton.type = 'button';
@@ -558,7 +538,6 @@ function keyPressed() {
   if (numero >= 1 && numero <= herramientas.length) elegirHerramienta(herramientas[numero - 1].nombre);
 }
 
-// Paso del inicio al juego: se desvanece la pantalla de inicio y aparece la escena ya encuadrada.
 const duracionEntrada = 900;  // ms, igual que la transición de #inicio en el CSS
 
 function empezar() {
@@ -596,7 +575,6 @@ function avanzarEntrada() {
   }
 }
 
-// El semáforo del dibujo del inicio alterna con el mismo ciclo que los del mapa.
 function animarSemaforoDeInicio() {
   if (document.getElementById('inicio').classList.contains('oculto')) return;
   const fase = mod2pi(millis() / 1000 * escalaDeTiempo * vuelta / parametros.T);

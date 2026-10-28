@@ -1,7 +1,3 @@
-// Niveles de tránsito y escenarios de arranque.
-//
-// Cada nivel cambia la cantidad de autos ilustrativos y el acople K del modelo.
-
 // autosPorSegundo es por entrada: cada entrada de la red recibe esa cantidad de autos nuevos por
 // segundo en cada sentido (una calle recibe menos que una avenida, ver autosEnCalle).
 const nivelesDeTransito = {
@@ -19,8 +15,6 @@ function cuadrasDe(nombre) {
   return ciudad.calles.filter(c => c.nombre === nombre);
 }
 
-// Arma un corredor: arranca en una cuadra y sigue derecho cuadra a cuadra, eligiendo en cada
-// esquina la continuación más alineada, como hace un auto que no dobla.
 function corredor(cuadra, desdeEsquina, cuantas) {
   const tramos = [cuadra];
   let esquina = puntaOpuesta(cuadra, desdeEsquina);
@@ -45,16 +39,13 @@ function corredor(cuadra, desdeEsquina, cuantas) {
   return tramos;
 }
 
-// Sigue una avenida desde un extremo estable, sin elecciones aleatorias.
-function avenidaDesdeExtremo(nombre, cantidad, extremo) {
-  const cuadras = cuadrasDe(nombre).filter(c => c.mano !== 'no' || nombre.includes('Sáenz'));
+function avenidaDesdeExtremo(nombre, cantidad) {
+  const cuadras = cuadrasDe(nombre);
   const extremos = [];
   for (const c of cuadras) for (const punta of [c.a, c.b]) {
     if (cuadras.filter(otra => otra.a === punta || otra.b === punta).length === 1) extremos.push({ c, punta });
   }
-  extremos.sort((a, b) => extremo === 'este'
-    ? ciudad.esquinas[b.punta].x - ciudad.esquinas[a.punta].x
-    : ciudad.esquinas[a.punta].x - ciudad.esquinas[b.punta].x);
+  extremos.sort((a, b) => ciudad.esquinas[b.punta].x - ciudad.esquinas[a.punta].x);
   return extremos.length ? corredor(extremos[0].c, extremos[0].punta, cantidad) : cuadras.slice(0, cantidad);
 }
 
@@ -62,11 +53,11 @@ const escenarios = {
   cordoba: {
     nombre: 'Córdoba, una mano', ayuda: 'Onda verde hacia el oeste',
     transito: 'medio', T: 90,
-    armar: () => avenidaDesdeExtremo('Avenida Córdoba', 8, 'este'),
+    armar: () => avenidaDesdeExtremo('Avenida Córdoba', 8),
   },
   dobleMano: {
     nombre: 'Doble mano', ayuda: 'Sáenz Peña: dos sentidos que compiten',
     transito: 'medio', T: 90,
-    armar: () => avenidaDesdeExtremo('Avenida Presidente Roque Sáenz Peña', 8, 'este'),
+    armar: () => avenidaDesdeExtremo('Avenida Presidente Roque Sáenz Peña', 8),
   },
 };

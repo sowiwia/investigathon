@@ -1,11 +1,5 @@
-// Autitos ilustrativos. Circulan a la velocidad v del modelo, siempre derecho, y frenan con la luz
-// roja o detrás del auto de adelante. Son solo visuales: no cambian las fases.
-//
-// Cada auto va por una cuadra, en un sentido (haciaB: de la esquina a hacia la b, o al revés) y por
-// un carril; avance es cuántos metros lleva recorridos de la cuadra.
-//
-// Los autos nuevos entran solo por las puntas de la red; al abrir una escena ya hay algunos en camino.
-// No doblan ni desaparecen al azar en un cruce: si no hay una cuadra recta con flujo, salen.
+// Los autos son ilustrativos: no cambian las fases. Los nuevos entran por las puntas de la red
+// y siguen derecho hasta salir; las escenas arrancan con algunos ya en camino.
 
 const autosEnCalle = 0.3;  // una calle recibe menos autos que una avenida
 const maximoDeAutos = 600;
@@ -28,12 +22,10 @@ function cantidadDeCarriles(calle) {
   return calle.deAaB && calle.deBaA ? carrilesPorLado(calle) : 2 * carrilesPorLado(calle);
 }
 
-// Esquina a la que llega un auto que va por 'calle' en el sentido 'haciaB'.
 function esquinaDeLlegada(calle, haciaB) {
   return haciaB ? calle.b : calle.a;
 }
 
-// Carril que le toca a un auto al pasar a otra cuadra, que puede tener menos carriles.
 function carrilAlPasar(auto, calle) {
   return auto.carril < cantidadDeCarriles(calle) ? auto.carril : 0;
 }
@@ -44,7 +36,6 @@ function posicionDeAuto(auto) {
   return puntoSobreCuadra(cuadra, avance, auto.haciaB);
 }
 
-// Calle de la red que sigue derecho al llegar a 'destino', si un auto puede tomarla.
 function calleSiguiente(plano, calle, haciaB) {
   const destino = esquinaDeLlegada(calle, haciaB);
   const enCiudad = plano.esquinas[destino].ciudad;
@@ -81,14 +72,12 @@ function tieneVerde(plano, fases, calle, esquina, s) {
   return rolDeCalle(plano, calle, esquina) === 'principal' ? verdePrincipal : !verdePrincipal;
 }
 
-// Segundos de verde que le quedan a 'calle' en una esquina, estando en verde.
 function verdeQueQueda(plano, fases, calle, esquina, parametros) {
   const principal = rolDeCalle(plano, calle, esquina) === 'principal';
   const termina = principal ? parametros.s * 2 * Math.PI : 2 * Math.PI;
   return mod2pi(termina - fases[esquina]) / (2 * Math.PI / parametros.T);
 }
 
-// Lugar al principio de la cuadra que sigue, en el carril que le tocaría al que cruza.
 function hayLugarDespues(autos, plano, auto) {
   const siguiente = calleSiguiente(plano, auto.calle, auto.haciaB);
   if (!siguiente) return true;  // se va del mapa: nada lo puede trabar
@@ -114,7 +103,6 @@ function claveDeCarril(plano, calle, haciaB, carril) {
 
 // Avanza los autos 'segundos' simulados y devuelve la nueva lista. 'azar' se puede fijar en los tests.
 function moverAutos(autos, plano, fases, parametros, segundos, azar = Math.random) {
-  // si la calle se cortó, se borró o cambió de mano, sus autos desaparecen
   const vivos = autos.filter(auto => plano.calles.includes(auto.calle) &&
     hayFlujo(auto.calle, auto.haciaB) && auto.carril < cantidadDeCarriles(auto.calle));
   for (const auto of vivos) auto.clave = claveDeCarril(plano, auto.calle, auto.haciaB, auto.carril);
@@ -148,7 +136,6 @@ function moverAutos(autos, plano, fases, parametros, segundos, azar = Math.rando
       continue;
     }
 
-    // llegó a la esquina: sigue derecho o sale del mapa; no hay giros
     const siguiente = calleSiguiente(plano, auto.calle, auto.haciaB);
     if (!siguiente) continue;
     const carril = carrilAlPasar(auto, siguiente.calle);
@@ -162,7 +149,6 @@ function moverAutos(autos, plano, fases, parametros, segundos, azar = Math.rando
       auto.calle = siguiente.calle;
       auto.haciaB = siguiente.haciaB;
       auto.carril = carril;
-      // la clave queda al día para que el que cruza atrás lo vea y no se le suba encima
       auto.clave = clave;
     }
     quedan.push(auto);
@@ -203,7 +189,6 @@ function agregarAuto(autos, calle, haciaB, azar) {
   return true;
 }
 
-// Mete los autos nuevos del paso, apenas pasado el cruce de arriba de cada entrada de la red.
 function agregarAutosNuevos(autos, plano, parametros, segundos, azar) {
   for (const calle of plano.calles) {
     for (const haciaB of [true, false]) {

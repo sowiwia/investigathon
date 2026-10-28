@@ -1,15 +1,8 @@
-// Vista y gestos. La vista tiene su zoom y su esquina en píxeles del mundo.
-// Con Pointer Events, el mouse y los dedos usan el mismo código:
-// - un dedo toca la herramienta elegida; si arrastra, mueve el mapa;
-// - con el mouse, el botón izquierdo usa la herramienta y arrastrar sigue pintando calles;
-// - dos dedos hacen zoom y mueven la vista;
-// - en la computadora, la rueda hace zoom y el botón derecho o del medio mueve la vista.
+// En pantalla táctil, arrastrar mueve el mapa; con mouse, Calle permite pintar al arrastrar.
 
 const vista = { zoom: 2, x: 0, y: 0 };
 
 const zoomMaximo = 5;
-// El zoom cambia de a pasos chicos y multiplicativos: así el salto se siente parejo tanto cerca
-// como lejos, y no da el tirón que daba sumar 1.
 const pasoDeZoom = 1.25;
 
 // El zoom más lejano es el que hace que el mundo tape la pantalla entera: con menos quedarían
@@ -42,7 +35,6 @@ function mostrarZoom() {
   document.getElementById('valorZoom').textContent = `×${vista.zoom.toFixed(1)}`;
 }
 
-// Cambia el zoom dejando quieto el punto del mundo que está bajo (x, y) en la pantalla.
 function cambiarZoom(nuevo, x, y) {
   const punto = aMundo(x, y);
   vista.zoom = constrain(nuevo, zoomMinimo(), zoomMaximo);
@@ -91,7 +83,6 @@ function alApoyar(e) {
 }
 
 function alMover(e) {
-  // sin ningún dedo apoyado, el movimiento solo ilumina la calle que está debajo
   if (!punteros.has(e.pointerId)) {
     if (punteros.size === 0) señalar(e.offsetX, e.offsetY);
     return;
@@ -107,7 +98,6 @@ function alMover(e) {
     arrastre = { x: e.offsetX, y: e.offsetY };
     limitarVista();
   } else if (toque && toque.id === e.pointerId) {
-    // un toque que se movió más de unos píxeles ya es un arrastre
     if (!toque.movido && dist(e.offsetX, e.offsetY, toque.x, toque.y) > 8) {
       toque.movido = true;
       if (toque.tipo === 'mouse' && herramienta !== 'mirar') {
@@ -121,7 +111,6 @@ function alMover(e) {
     if (toque.tipo === 'mouse' && herramienta !== 'mirar') {
       moverHerramienta(e.offsetX, e.offsetY);
     } else {
-      // En Mirar o con un dedo, arrastrar mueve el mapa.
       vista.x -= (e.offsetX - anterior.x) / vista.zoom;
       vista.y -= (e.offsetY - anterior.y) / vista.zoom;
       limitarVista();

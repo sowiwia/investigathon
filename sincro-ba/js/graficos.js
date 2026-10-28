@@ -27,7 +27,6 @@ function graficosVisibles() {
   return !panel.classList.contains('cerrada') && !document.body.classList.contains('sinPaneles');
 }
 
-// Arranca de cero el historial: se usa al mezclar fases o al cambiar algo que mueve el equilibrio.
 function reiniciarMuestras() {
   muestrasDeV = [];
   proximaMuestra = 0;
@@ -82,7 +81,6 @@ function desfaseDeCalle(calle, red, fases) {
   return { desfase, objetivo: red.delta[j][i] };
 }
 
-// Guarda una muestra por segundo simulado.
 function registrarMuestra(tiempo, red, fases) {
   if (tiempo < proximaMuestra) return;
   proximaMuestra = tiempo + segundosEntreMuestras;
@@ -128,7 +126,6 @@ function actualizarGraficos() {
   document.getElementById('pistaDesfases').hidden = series.length > 0;
 }
 
-// Elige o deja de graficar una calle. Si ya hay 4, se va la más vieja.
 function alternarSerie(calle) {
   const yaEsta = series.find(serie => serie.calle === calle);
   if (yaEsta) {
@@ -141,7 +138,6 @@ function alternarSerie(calle) {
   return true;
 }
 
-// Saca las series de calles que ya no existen.
 function limpiarSeries(plano) {
   series = series.filter(serie => plano.calles.includes(serie.calle));
 }
@@ -156,7 +152,6 @@ function callesElegidas() {
 
 const radioDeLaRueda = 34;
 
-// Lo que le falta a una cuadra para cumplir: 0 es cumplida, ±π es lo más lejos posible.
 function errorDeCalle(calle, red, fases) {
   const { desfase, objetivo } = desfaseDeCalle(calle, red, fases);
   return objetivo === null ? null : wrap(desfase - objetivo);
@@ -184,7 +179,6 @@ function dibujarRueda(plano, red, fases, tol) {
   const medio = canvas.width / 2;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // el aro y la zona de tolerancia arriba
   ctx.strokeStyle = paleta.cordon;
   ctx.lineWidth = 1;
   ctx.beginPath();

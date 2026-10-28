@@ -15,8 +15,6 @@ function invalidarCiudad() {
   ciudadAlDia = false;
 }
 
-// Pinta una franja de 2·medio+1 píxeles de ancho a lo largo del tramo p→q.
-// salteo > 1 la hace punteada: salteo píxeles pintados y salteo apagados.
 function banda(capa, p, q, medio, salteo = 1, desfase = 0) {
   const largo = Math.hypot(q[0] - p[0], q[1] - p[1]);
   if (largo < 0.01) return;
@@ -34,7 +32,6 @@ function banda(capa, p, q, medio, salteo = 1, desfase = 0) {
   }
 }
 
-// Solo los dos bordes del tramo, para resaltar sin tapar lo que hay abajo.
 function contorno(capa, p, q, medio) {
   const largo = Math.hypot(q[0] - p[0], q[1] - p[1]);
   if (largo < 0.01) return;
@@ -56,7 +53,6 @@ function medioAncho(cuadra) {
   return anchoDeCalzada(cuadra.clase) + (cuadra.clase === 'avenida' ? 1 : 0);
 }
 
-// Galones hacia donde van los autos: una punta de flecha de dos trazos, cada 36 px.
 function flechas(capa, puntos, medio) {
   const alto = Math.min(3, Math.max(2, medio - 2));
   let recorrido = 0;
@@ -68,7 +64,6 @@ function flechas(capa, puntos, medio) {
     for (let t = ((-recorrido) % 36 + 36) % 36; t < largo; t += 36) {
       const cx = p[0] + ux * t;
       const cy = p[1] + uy * t;
-      // la punta va adelante y los dos trazos se abren hacia atrás
       for (let d = 0; d <= alto; d++) {
         const adelante = alto - d;
         capa.rect(Math.round(cx + ux * adelante - uy * d), Math.round(cy + uy * adelante + ux * d), 1, 1);
@@ -79,7 +74,6 @@ function flechas(capa, puntos, medio) {
   });
 }
 
-// Hacia dónde circulan los autos de una calle de mano única.
 function puntosEnSentido(calle) {
   const puntos = calle.cuadra.puntos;
   return calle.deAaB ? puntos : [...puntos].reverse();
@@ -95,7 +89,6 @@ function dibujarFantasmas(capa, plano) {
   }
 }
 
-// Asfalto y cordón de una calle de la red.
 function dibujarCalzada(capa, calle) {
   const medio = medioAncho(calle.cuadra);
   const puntos = calle.cuadra.puntos;
@@ -105,7 +98,6 @@ function dibujarCalzada(capa, calle) {
   recorrer(puntos, (p, q) => banda(capa, p, q, medio));
 }
 
-// Eje de la calle: continuo si es mano única, punteado si es doble mano, y las flechas del sentido.
 function dibujarEje(capa, calle, color) {
   capa.fill(color);
   const unaMano = calle.deAaB !== calle.deBaA;
@@ -125,7 +117,6 @@ function dibujarPrevia(capa, cuadra) {
   recorrer(cuadra.puntos, (p, q, i) => banda(capa, p, q, 0, 3, i * 5));
 }
 
-// Cuánto ocupa el cruce: lo que mida la calle más ancha que llega.
 function radioDeCruce(plano, indice) {
   let radio = 3;
   for (const calle of plano.calles) {
@@ -167,7 +158,6 @@ function dibujarSemaforos(capa, plano, indice, fase, s, chicos) {
   }
 }
 
-// Cabezal de 3x5: roja arriba y verde abajo, como un semáforo real.
 function dibujarCabezal(capa, x, y, verde) {
   capa.fill(paleta.caja);
   capa.rect(x - 1, y - 3, 3, 6);
@@ -177,7 +167,6 @@ function dibujarCabezal(capa, x, y, verde) {
   capa.rect(x, y, 1, 2);
 }
 
-// Autos de 4x3 por su carril, con mano derecha.
 function dibujarAutos(capa, autos) {
   for (const auto of autos) {
     const pos = posicionDeAuto(auto);
@@ -195,8 +184,6 @@ function dibujarAutos(capa, autos) {
   }
 }
 
-// La escena trae el plano, la red, las fases, los parámetros, los autos, las calles elegidas
-// para graficar (con su color), la tolerancia de flujo cumplido y la cuadra que está bajo el dedo.
 function dibujarMundo(capa, mapa, escena) {
   const { plano, red, fases, parametros, autos, elegidas, tol, señalada, zoom } = escena;
   capa.noStroke();
@@ -266,7 +253,6 @@ function dibujarObelisco(capa) {
   });
 }
 
-// Íconos de 9x9 para la barra de herramientas.
 const iconos = {
   mirar: ['.........', '..wwwww..', '.w.....w.', 'w...c...w', 'w..ccc..w', 'w...c...w', '.w.....w.', '..wwwww..', '.........'],
   calle: ['.........', '.........', 'ggggggggg', 'aaaaaaaaa', 'wwaawwaaw', 'aaaaaaaaa', 'ggggggggg', '.........', '.........'],
@@ -282,7 +268,6 @@ const coloresDeIconos = {
   w: paleta.texto, y: paleta.amarillo, c: paleta.cumplido, p: paleta.pantalla,
 };
 
-// Pinta un ícono en un <canvas> de 9x9 (la hoja de estilos lo amplía sin suavizar).
 function pintarIcono(canvas, icono) {
   const ctx = canvas.getContext('2d');
   icono.forEach((fila, j) => {

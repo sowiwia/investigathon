@@ -5,7 +5,6 @@ function crearPlano() {
   return { esquinas: [], calles: [] };
 }
 
-// Agrega una esquina si no está y devuelve su índice en el plano.
 function agregarEsquina(plano, indiceCiudad) {
   const existente = plano.esquinas.findIndex(e => e.ciudad === indiceCiudad);
   if (existente !== -1) return existente;
@@ -14,7 +13,6 @@ function agregarEsquina(plano, indiceCiudad) {
   return plano.esquinas.length - 1;
 }
 
-// Quita la esquina con sus calles. Las esquinas que venían después bajan un índice.
 function quitarEsquina(plano, indice) {
   plano.esquinas.splice(indice, 1);
   plano.calles = plano.calles.filter(c => c.a !== indice && c.b !== indice);
@@ -28,7 +26,6 @@ function buscarCalle(plano, cuadra) {
   return plano.calles.find(c => c.cuadra === cuadra);
 }
 
-// Pone una cuadra de la ciudad en la red, con el sentido y la categoría que tiene en la realidad.
 function agregarCalle(plano, cuadra) {
   if (buscarCalle(plano, cuadra)) return null;
   const calle = {
@@ -45,13 +42,11 @@ function agregarCalle(plano, cuadra) {
 
 function quitarCalle(plano, calle) {
   plano.calles = plano.calles.filter(c => c !== calle);
-  // una esquina sin calles ya no es parte de la red
   for (let i = plano.esquinas.length - 1; i >= 0; i--) {
     if (!plano.calles.some(c => c.a === i || c.b === i)) quitarEsquina(plano, i);
   }
 }
 
-// Si por la cuadra circulan autos en ese sentido.
 function hayFlujo(calle, haciaB) {
   return haciaB ? calle.deAaB : calle.deBaA;
 }
@@ -98,8 +93,6 @@ function calleCumplida(calle, red, fases, tol) {
   return flujoCumplido(fases, red, calle.b, calle.a, tol);
 }
 
-// Usa el mismo criterio que pinta los ejes de azul: la red está sincronizada solamente cuando
-// tiene al menos una calle y todas sus cuadras cumplen su desfase objetivo.
 function redCumplida(plano, red, fases, tol) {
   return plano.calles.length > 0 && plano.calles.every(calle => calleCumplida(calle, red, fases, tol));
 }

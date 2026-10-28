@@ -1,18 +1,9 @@
-// Sonidos de la interfaz, sintetizados con Web Audio: no hay archivos de audio que cargar.
-//
-// La idea es un eco del tango: bandoneón (varias ondas diente de sierra desafinadas entre sí y
-// filtradas) y cuerda pulsada (triángulo con el filtro cerrándose), sobre una pentatónica menor de
-// La. Cualquier combinación de esas notas suena bien junta, así que la red puede disparar muchas
-// seguidas sin que choquen.
-//
-// Para que no moleste: todo entra por un volumen general bajo y un compresor, cada efecto tiene un
-// mínimo de tiempo entre repeticiones, hay un tope de voces a la vez.
+// Sonidos sintetizados con Web Audio. El volumen, el compresor y el límite de voces evitan
+// que se acumulen efectos al editar varias calles seguidas.
 
 const volumenGeneral = 0.5;
 const vocesMaximas = 18;
 
-// Pentatónica menor de La, en hercios. La escala sube casi dos octavas: alcanza para que agregar
-// cuadras suba de a una nota sin irse a un agudo molesto.
 const escala = [220, 261.63, 293.66, 329.63, 392, 440, 523.25, 587.33, 659.25, 783.99];
 
 const sonido = {
@@ -67,7 +58,6 @@ function prepararAudio() {
   return ctx;
 }
 
-// Deja pasar un efecto solo si ya pasó su espera y si no hay demasiadas voces sonando.
 function puedeSonar(efecto, esperaMs) {
   if (!sonido.encendido) return false;
   if (!prepararAudio()) return false;
@@ -78,7 +68,6 @@ function puedeSonar(efecto, esperaMs) {
   return true;
 }
 
-// Una voz: oscilador, filtro y una envolvente de ataque y caída. Se apaga sola.
 function tocarNota(frecuencia, opciones = {}) {
   const ctx = sonido.contexto;
   const {
@@ -129,7 +118,6 @@ function tocarNota(frecuencia, opciones = {}) {
   osc.stop(t + ataque + caida + 0.05);
 }
 
-// Ruido corto y filtrado, para los golpecitos de la interfaz.
 function tocarRoce(opciones = {}) {
   const ctx = sonido.contexto;
   const { volumen = 0.12, caida = 0.08, filtro = 1800, tipo = 'bandpass' } = opciones;
@@ -157,7 +145,6 @@ function tocarRoce(opciones = {}) {
   fuente.start(t);
 }
 
-// Acorde de bandoneón: cada nota son dos sierras desafinadas, con ataque de fuelle.
 function tocarAcorde(frecuencias, opciones = {}) {
   const { volumen = 0.055, ataque = 0.12, caida = 0.9, separacion = 0.05 } = opciones;
   frecuencias.forEach((f, i) => {
@@ -170,16 +157,12 @@ function tocarAcorde(frecuencias, opciones = {}) {
   });
 }
 
-// Efectos
-
-// Botones de la interfaz: una madera seca, apenas audible.
 function sonarBoton() {
   if (!puedeSonar('boton', 40)) return;
   tocarRoce({ volumen: 0.09, caida: 0.05, filtro: 2400 });
   tocarNota(392, { volumen: 0.07, ataque: 0.002, caida: 0.07, filtro: 1800, eco: 0.1 });
 }
 
-// Elegir herramienta: el mismo golpecito, un poco más arriba.
 function sonarHerramienta() {
   if (!puedeSonar('herramienta', 40)) return;
   tocarRoce({ volumen: 0.07, caida: 0.04, filtro: 3200 });
@@ -199,7 +182,6 @@ function sonarCalle() {
   tocarNota(f * 2, { volumen: 0.04, ataque: 0.004, caida: 0.14, filtro: 4000, eco: 0.2 });
 }
 
-// Borrar: la misma cuerda, pero grave y cayendo.
 function sonarBorrar() {
   if (!puedeSonar('borrar', 55)) return;
   tocarNota(196, {
@@ -209,7 +191,6 @@ function sonarBorrar() {
   tocarRoce({ volumen: 0.06, caida: 0.06, filtro: 700 });
 }
 
-// Graficar: dos notas, hacia arriba al empezar a seguir una cuadra y hacia abajo al soltarla.
 function sonarGraficar(prendida) {
   if (!puedeSonar('graficar', 60)) return;
   const notas = prendida ? [440, 659.25] : [659.25, 440];
@@ -221,7 +202,6 @@ function sonarGraficar(prendida) {
   });
 }
 
-// Mezclar las fases: un barrido de ruido, como las cartas al barajarse.
 function sonarMezclar() {
   if (!puedeSonar('mezclar', 120)) return;
   for (let i = 0; i < 4; i++) {
@@ -232,13 +212,11 @@ function sonarMezclar() {
   }
 }
 
-// Empezar: el fuelle abriendo en La menor con novena.
 function sonarInicio() {
   if (!puedeSonar('inicio', 400)) return;
   tocarAcorde([220, 329.63, 440, 587.33], { volumen: 0.05, ataque: 0.18, caida: 1.4, separacion: 0.07 });
 }
 
-// Todas las calles quedaron azules: acorde mayor que resuelve, el único sonido que se permite destacar.
 function sonarSincronizacion() {
   if (!puedeSonar('sincro', 1500)) return;
   tocarAcorde([261.63, 392, 523.25], { volumen: 0.055, ataque: 0.1, caida: 1.6, separacion: 0.09 });

@@ -40,7 +40,6 @@ function cargarCiudad(datos) {
   return ciudad;
 }
 
-// Largo de la cuadra en píxeles y distancia acumulada hasta cada punto, para poder recorrerla.
 function medirCuadra(calle) {
   calle.acumulado = [0];
   for (let i = 1; i < calle.puntos.length; i++) {
@@ -51,7 +50,6 @@ function medirCuadra(calle) {
   calle.largoPx = calle.acumulado[calle.acumulado.length - 1];
 }
 
-// Punto y dirección a 'avance' píxeles del arranque, recorriendo la cuadra en el sentido dado.
 function puntoSobreCuadra(calle, avance, haciaB) {
   const puntos = haciaB ? calle.puntos : [...calle.puntos].reverse();
   const acumulado = haciaB
@@ -77,7 +75,6 @@ function lineaDeFrenado(cuadra) {
   return Math.max(cuadra.largo * 0.4, cuadra.largo - metrosAntesDelCruce);
 }
 
-// El punto del eje donde frena quien llega a esa esquina, con la dirección en la que viene.
 function puntoDeParada(cuadra, esquina) {
   const haciaB = cuadra.b === esquina;
   return puntoSobreCuadra(cuadra, cuadra.largoPx * lineaDeFrenado(cuadra) / cuadra.largo, haciaB);
@@ -87,7 +84,6 @@ function puntaOpuesta(calle, esquina) {
   return calle.a === esquina ? calle.b : calle.a;
 }
 
-// Los puntos de la cuadra ordenados desde una de sus esquinas, para mirarla desde esa punta.
 function puntosDesde(calle, esquina) {
   return calle.a === esquina ? calle.puntos : [...calle.puntos].reverse();
 }
@@ -99,7 +95,6 @@ function rumboDeSalida(calle, esquina) {
   return Math.atan2(y2 - y1, x2 - x1);
 }
 
-// Y con la que llega a esa esquina, que es el último tramo visto desde la otra punta.
 function rumboDeLlegada(calle, esquina) {
   const puntos = puntosDesde(calle, puntaOpuesta(calle, esquina));
   const [x1, y1] = puntos[puntos.length - 2];
@@ -150,7 +145,6 @@ function correccionPi(calle, desde, hacia, s) {
   return arranqueDeVerde(desde, calle, s) - arranqueDeVerde(hacia, calle, s);
 }
 
-// Distancia de un punto a un segmento, en píxeles del mundo.
 function distanciaASegmento(px, py, [x1, y1], [x2, y2]) {
   const dx = x2 - x1;
   const dy = y2 - y1;
@@ -167,7 +161,6 @@ function distanciaACalle(px, py, calle) {
   return menor;
 }
 
-// La cuadra más cercana al punto, si está a menos de tol.
 function calleCercana(px, py, tol) {
   let elegida = null;
   let menor = tol;
