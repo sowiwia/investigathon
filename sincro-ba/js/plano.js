@@ -74,14 +74,15 @@ function armarRed(plano, parametros) {
     const base = desfaseObjetivo(calle.cuadra.largo, parametros.v, parametros.T);
     // una cuadra que entra como principal en una punta y como secundaria en la otra corre su
     // objetivo lo que valga la diferencia entre los arranques de verde (ec. 17)
-    const pi = correccionPi(calle.cuadra, plano.esquinas[a].ciudad, plano.esquinas[b].ciudad, parametros.s);
+    const correccion = correccionPi(calle.cuadra, plano.esquinas[a].ciudad, plano.esquinas[b].ciudad, parametros.s);
 
-    red.vecinos[a].push(b);
-    red.vecinos[b].push(a);
+    // Ni es un conjunto: dos cuadras entre las mismas esquinas no hacen dos vecinos.
+    if (!red.vecinos[a].includes(b)) red.vecinos[a].push(b);
+    if (!red.vecinos[b].includes(a)) red.vecinos[b].push(a);
     red.K[a][b] = calle.deAaB ? flujo : 0;
     red.K[b][a] = calle.deBaA ? flujo : 0;
-    red.delta[a][b] = mod2pi(base + pi);
-    red.delta[b][a] = mod2pi(base - pi);
+    red.delta[a][b] = mod2pi(base + correccion);
+    red.delta[b][a] = mod2pi(base - correccion);
   }
   return red;
 }

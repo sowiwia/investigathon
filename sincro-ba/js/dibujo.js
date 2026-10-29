@@ -1,10 +1,3 @@
-// Dibujo del mundo en una capa de 1280x720: el mapa de 640x360 ampliado x2 y, encima, las calles
-// reales con sus semáforos y autos.
-//
-// La ciudad entera se dibuja una sola vez en una capa aparte y se rehace solo cuando cambia la red,
-// porque son cientos de cuadras. Lo que cambia en cada cuadro (ejes de color, semáforos, autos y el
-// resalte) va directo sobre el mundo.
-
 const anchoMundo = 1280;
 const altoMundo = 720;
 
@@ -79,8 +72,6 @@ function puntosEnSentido(calle) {
   return calle.deAaB ? puntos : [...puntos].reverse();
 }
 
-// Las cuadras que todavía no están en la red: un hilo tenue y punteado que muestra dónde se puede
-// dibujar.
 function dibujarFantasmas(capa, plano) {
   capa.fill(paleta.fantasma);
   for (const cuadra of ciudad.calles) {
@@ -105,8 +96,6 @@ function dibujarEje(capa, calle, color) {
   if (unaMano) flechas(capa, puntosEnSentido(calle), medioAncho(calle.cuadra));
 }
 
-// La cuadra que está bajo el dedo y todavía no es de la red se muestra como quedaría al sumarla:
-// la calzada apagada y el eje punteado, para que se vea qué se va a dibujar antes de tocar.
 function dibujarPrevia(capa, cuadra) {
   const medio = medioAncho(cuadra);
   capa.fill(paleta.cordon);
@@ -134,20 +123,16 @@ function dibujarCruce(capa, plano, indice) {
   capa.rect(Math.round(x - radio), Math.round(y - radio), 2 * radio + 1, 2 * radio + 1);
 }
 
-// Un cabezal por calle que llega al cruce, parado en su línea de frenado y corrido a la derecha de
-// quien maneja, como en la calle: así se ve de una a qué calle le toca cada luz.
 function dibujarSemaforos(capa, plano, indice, fase, s, chicos) {
   const esquina = plano.esquinas[indice];
   const verdePrincipal = verdeEnPrincipal(fase, s);
   if (chicos) {
-    // de lejos, un solo punto por cruce con el color de la principal
     capa.fill(verdePrincipal ? paleta.verde : paleta.rojo);
     capa.rect(Math.round(esquina.x) - 1, Math.round(esquina.y) - 1, 3, 3);
     return;
   }
   for (const calle of plano.calles) {
     if (calle.a !== indice && calle.b !== indice) continue;
-    // solo llevan semáforo las calles por las que llegan autos a este cruce
     if (!hayFlujo(calle, calle.b === indice)) continue;
     const parada = puntoDeParada(calle.cuadra, esquina.ciudad);
     const costado = medioAncho(calle.cuadra) + 3;
@@ -175,7 +160,6 @@ function dibujarAutos(capa, autos) {
     const dx = -pos.uy * lado * distancia;
     const dy = pos.ux * lado * distancia;
     capa.fill(coloresDeAutos[Math.floor(auto.tono * coloresDeAutos.length)]);
-    // un auto mide unos 8 m de largo por 4 de ancho; en diagonal queda cuadrado
     const derecho = Math.abs(pos.ux) > 2 * Math.abs(pos.uy);
     const parado = Math.abs(pos.uy) > 2 * Math.abs(pos.ux);
     const largo = derecho ? [2, 1] : parado ? [1, 2] : [1, 1];
@@ -241,8 +225,6 @@ const obeliscoChico = [
 ];
 let capaObelisco = null;
 
-// Obelisco en miniatura, parado en la Plaza de la República: dos píxeles del mundo por píxel
-// del sprite.
 function dibujarObelisco(capa) {
   if (!capaObelisco) {
     capaObelisco = createGraphics(12, 34);
@@ -266,7 +248,6 @@ const iconos = {
   borrar: ['R.......R', '.R.....R.', '..R...R..', '...R.R...', '....R....', '...R.R...', '..R...R..', '.R.....R.', 'R.......R'],
   graficar: ['w........', 'w......c.', 'w.....c..', 'w....c...', 'w.c..c...', 'wc.cc....', 'w........', 'wwwwwwwww', '.........'],
   vaciar: ['.........', '..yyyyy..', '.yyyyyyy.', '..y...y..', '..y...y..', '..y...y..', '..y...y..', '..yyyyy..', '.........'],
-  // una pantalla con un panel a cada lado: el botón que los esconde
   paneles: ['wwwwwwwww', 'wggpppggw', 'wggpppggw', 'wggpppggw', 'wggpppggw', 'wggpppggw', 'wggpppggw', 'wggpppggw', 'wwwwwwwww'],
 };
 

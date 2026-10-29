@@ -275,4 +275,39 @@ QUnit.module('indicadores', () => {
     const fases = simular(fasesSerie5, red, omega, dt, 20000);
     assert.true(convergio(fases, red, omega, 0.001), 'al final sí');
   });
+
+  // En un ciclo las diferencias de fase se cancelan, así que solo se cumple si los Δ suman cero.
+  // Tres de 1 rad no suman: se detiene sin cumplir.
+  QUnit.test('un ciclo frustrado llega al equilibrio sin cumplir sus desfases', assert => {
+    const red = redVacia(3);
+    conectar(red, 0, 1, 1, 0, 1);
+    conectar(red, 1, 2, 1, 0, 1);
+    conectar(red, 2, 0, 1, 0, 1);
+
+    const fases = simular([0, 0.4, 1.7], red, omega, dt, 200000);
+
+    assert.true(convergio(fases, red, omega, 0.001), 'la dinámica se detuvo');
+    const V = potencial(fases, red);
+    assert.ok(V > 0.1, `pero el potencial quedó en ${V.toFixed(3)}, no en cero`);
+    const cumplidos = [[0, 1], [1, 2], [2, 0]]
+      .filter(([j, i]) => flujoCumplido(fases, red, j, i, 0.1)).length;
+    assert.ok(cumplidos < 3, `solo ${cumplidos} de 3 flujos quedaron dentro de la tolerancia`);
+  });
+
+  // Con Δ que suman 2π sí cierra: confirma que es el ciclo y no el integrador.
+  QUnit.test('el mismo ciclo con Δ que cierran sí se cumple entero', assert => {
+    const red = redVacia(3);
+    const delta = vuelta / 3;
+    conectar(red, 0, 1, 1, 0, delta);
+    conectar(red, 1, 2, 1, 0, delta);
+    conectar(red, 2, 0, 1, 0, delta);
+
+    const fases = simular([0, 0.4, 1.7], red, omega, dt, 200000);
+
+    assert.true(convergio(fases, red, omega, 0.001), 'la dinámica se detuvo');
+    assert.ok(potencial(fases, red) < 1e-6, 'y el potencial llegó a cero');
+    for (const [j, i] of [[0, 1], [1, 2], [2, 0]]) {
+      assert.true(flujoCumplido(fases, red, j, i, 0.1), `el flujo ${j}->${i} quedó cumplido`);
+    }
+  });
 });

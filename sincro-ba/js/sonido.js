@@ -1,6 +1,3 @@
-// Sonidos sintetizados con Web Audio. El volumen, el compresor y el límite de voces evitan
-// que se acumulen efectos al editar varias calles seguidas.
-
 const volumenGeneral = 0.5;
 const vocesMaximas = 18;
 
@@ -12,12 +9,10 @@ const sonido = {
   eco: null,
   encendido: localStorage.getItem('sonido') !== 'no',
   voces: 0,
-  ultimaVez: {},    // por efecto, el millis del navegador en que sonó
-  notaDeCalle: 0,   // en qué escalón de la escala va la cadena de calles agregadas
+  ultimaVez: {},
+  notaDeCalle: 0,
 };
 
-// El navegador deja arrancar el audio recién con un gesto de la persona, así que el contexto se
-// crea en el primer toque y no al cargar la página.
 function prepararAudio() {
   if (sonido.contexto) {
     if (sonido.contexto.state === 'suspended') sonido.contexto.resume();
@@ -36,7 +31,6 @@ function prepararAudio() {
   maestro.connect(compresor);
   compresor.connect(ctx.destination);
 
-  // Eco corto con devolución: da el aire de sala sin cargar un impulso de reverberación.
   const eco = ctx.createDelay(1);
   eco.delayTime.value = 0.17;
   const devolucion = ctx.createGain();
@@ -169,8 +163,6 @@ function sonarHerramienta() {
   tocarNota(587.33, { volumen: 0.07, ataque: 0.002, caida: 0.09, filtro: 2400, eco: 0.2 });
 }
 
-// Sumar una cuadra: cuerda pulsada que sube por la escala mientras se arrastra el dedo, y vuelve al
-// grave cuando pasa medio segundo sin agregar nada. Así una calle larga suena como una frase.
 function sonarCalle() {
   if (!puedeSonar('calle', 55)) return;
   const ahora = performance.now();
@@ -229,12 +221,10 @@ function sonarSincronizacion() {
 }
 
 function prepararSonido() {
-  // Los botones de la interfaz comparten el mismo golpecito; los efectos propios del juego los
-  // dispara principal.js donde pasa cada cosa.
   document.addEventListener('pointerdown', e => {
     const boton = e.target.closest('.boton');
     if (!boton) return;
-    if (boton.id === 'botonEmpezar') return;  // el inicio tiene su propio acorde
+    if (boton.id === 'botonEmpezar') return;
     sonarBoton();
   });
 }

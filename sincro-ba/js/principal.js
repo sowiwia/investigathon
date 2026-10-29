@@ -8,6 +8,14 @@ const escalaDeTiempo = 1.5;
 const segundosPorTramoDeAutos = 0.25;
 const tolCumplido = 0.1;
 
+// Si en un ciclo los Δ no suman cero, el mínimo del potencial no es cero y la red se detiene sin
+// cumplir (frustración, sec. 3.2). Se escala con K porque dφ/dt − ω crece con el acople.
+const tolEquilibrio = 1e-3;
+
+function enEquilibrio() {
+  return convergio(fases, redActual, vuelta / parametros.T, tolEquilibrio * escalaDeAcople(redActual));
+}
+
 // T lo fija cada escenario y v es la velocidad de marcha de siempre: los dos entran en
 // Δ = 2πL/(vT) y se muestran como lectura en vez de dejarlos a mano.
 //
@@ -16,7 +24,7 @@ const tolCumplido = 0.1;
 const parametros = {
   T: 90,
   s: 0.5,
-  v: 40 / 3.6,
+  v: 50 / 3.6,  // velocidad máxima permitida, como en el informe
   transito: 'medio',
   flujoCalle: 0.5,
   flujoAvenida: 5,
@@ -30,19 +38,19 @@ let redActual = armarRed(plano, parametros);
 let fases = [];
 let autos = [];
 let tiempo = 0;
-let sincronizoEn = null;  // cuánto tardó la red en tener todas sus calles azules
+let sincronizoEn = null;
 let jugando = false;
 let entrada = null;
 
 let mapa;
 let datosDeCalles;
 let mundo;
-let señalada = null;  // la cuadra que está bajo el dedo
+let señalada = null;
+let foco = { x: 640, y: 360 };
+let mostrarDesfases = () => {};
 let ultimaActualizacionIndicadores = 0;
 let ultimaActualizacionGraficos = 0;
 
-// En el celular, windowHeight a veces incluye la barra del navegador. visualViewport da el alto
-// que realmente se ve, así el canvas no queda cortado ni deja una franja vacía.
 function anchoDePantalla() {
   return Math.round((window.visualViewport && window.visualViewport.width) || windowWidth);
 }
@@ -80,7 +88,7 @@ function setup() {
   cargarCiudad(datosDeCalles);
 
   vista.zoom = zoomMinimo();
-  centrarVistaEn(640, 360);  // el Obelisco
+  centrarVistaEn(640, 360);
   mostrarZoom();
   prepararInterfaz();
   prepararAyuda();
@@ -89,6 +97,11 @@ function setup() {
   escucharGestos(lienzo.elt);
   if (window.visualViewport) window.visualViewport.addEventListener('resize', () => windowResized());
   window.addEventListener('orientationchange', () => setTimeout(windowResized, 120));
+  if (window.ResizeObserver) {
+    new ResizeObserver(() => {
+      if (width !== anchoDePantalla() || height !== altoDePantalla()) windowResized();
+    }).observe(document.documentElement);
+  }
   aplicarEscenario('cordoba');
 }
 
@@ -119,8 +132,9 @@ function draw() {
 }
 
 function windowResized() {
-  const centro = aMundo(width / 2, height / 2);
+  const centro = centroDeLaVista();
   resizeCanvas(anchoDePantalla(), altoDePantalla());
+  olvidarBanda();
   vista.zoom = constrain(vista.zoom, zoomMinimo(), zoomMaximo);
   centrarVistaEn(centro.x, centro.y);
   mostrarZoom();
@@ -215,6 +229,14 @@ function fasesIniciales() {
   return plano.esquinas.map((_, i) => mod2pi(i * 0.13 + (i % 3) * 0.09));
 }
 
+const zoomLegible = 2;
+
+function zoomDeEntrada(clave) {
+  if (esPantallaChica()) return constrain(zoomLegible, zoomMinimo(), zoomMaximo);
+  if (clave === 'cordoba') return zoomMinimo();
+  return Math.max(zoomMinimo(), Math.min(2.2, zoomMaximo));
+}
+
 function aplicarEscenario(clave) {
   const escenario = escenarios[clave];
   reiniciarEntradasDeAutos();
@@ -233,14 +255,10 @@ function aplicarEscenario(clave) {
   if (plano.esquinas.length) {
     const xs = plano.esquinas.map(e => e.x);
     const ys = plano.esquinas.map(e => e.y);
-    const x = (Math.min(...xs) + Math.max(...xs)) / 2;
-    const y = (Math.min(...ys) + Math.max(...ys)) / 2;
-    const celularVertical = window.matchMedia('(max-width: 700px) and (orientation: portrait)').matches;
-    vista.zoom = clave === 'cordoba' ? zoomMinimo() : celularVertical
-      ? constrain(Math.min((width - 40) / (Math.max(...xs) - Math.min(...xs) + 20),
-        (height - 340) / (Math.max(...ys) - Math.min(...ys) + 80)), zoomMinimo(), 2.2)
-      : Math.max(zoomMinimo(), Math.min(2.2, zoomMaximo));
-    centrarVistaEn(x, y);
+    olvidarBanda();
+    vista.zoom = zoomDeEntrada(clave);
+    foco = { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: (Math.min(...ys) + Math.max(...ys)) / 2 };
+    centrarVistaEn(foco.x, foco.y);
     mostrarZoom();
   }
   for (const boton of document.querySelectorAll('#escenarios .boton')) {
@@ -279,15 +297,22 @@ function actualizarIndicadores() {
 
   const estado = document.getElementById('estado');
   const sincronizada = redCumplida(plano, redActual, fases, tolCumplido);
+  const ciclos = sincronizoEn === null ? 0 : (sincronizoEn / parametros.T).toFixed(1);
   document.getElementById('valorSincro').textContent = sincronizoEn === null
     ? '–'
-    : `${Math.round(sincronizoEn)} s · ${(sincronizoEn / parametros.T).toFixed(1)} ciclos`;
-  estado.textContent = !hayCalles ? 'Sin semáforos' : sincronizada ? 'Sincronizado' : 'Sin sincronizar';
+    : esCelularVertical()
+      ? `${Math.round(sincronizoEn)}s · ${ciclos}T`
+      : `${Math.round(sincronizoEn)} s · ${ciclos} ciclos`;
+  // Detenida pero sin cumplir es un estado propio, no "sin sincronizar".
+  const frustrada = !sincronizada && hayCalles && enEquilibrio();
+  estado.textContent = !hayCalles ? 'Sin semáforos'
+    : sincronizada ? 'Sincronizado'
+    : frustrada ? 'Equilibrio frustrado'
+    : 'Sin sincronizar';
   estado.classList.toggle('sincronizado', sincronizada);
+  estado.classList.toggle('frustrada', frustrada);
 }
 
-// Se comprueba en cada cuadro, igual que el color de las calles, para que el tiempo y el acorde
-// coincidan con el instante en que la última cuadra pasa a azul.
 function detectarSincronizacion() {
   if (!jugando || sincronizoEn !== null || !redCumplida(plano, redActual, fases, tolCumplido)) return;
   sincronizoEn = tiempo;
@@ -295,7 +320,6 @@ function detectarSincronizacion() {
   sonarSincronizacion();
 }
 
-// Radio para acertar con el dedo: unos 20 px de pantalla.
 function radioDeToque() {
   return Math.max(6, 20 / vista.zoom);
 }
@@ -318,7 +342,6 @@ function mostrarNombre() {
   }
 }
 
-// Con la herramienta Calle, arrastrar con el mouse va sumando a la red todas las cuadras que toca.
 function moverHerramienta(x, y) {
   señalar(x, y);
   if (herramienta !== 'calle' || !señalada) return;
@@ -342,7 +365,11 @@ function tocar(x, y) {
     quitarCalleYFases(calle);
     sonarBorrar();
   }
-  if (herramienta === 'graficar') sonarGraficar(alternarSerie(calle));
+  if (herramienta === 'graficar') {
+    const agregada = alternarSerie(calle);
+    sonarGraficar(agregada);
+    if (agregada) mostrarDesfases();
+  }
   alCambiarElPlano();
 }
 
@@ -439,7 +466,7 @@ function prepararInterfaz() {
 function prepararPaneles() {
   const paneles = [...document.querySelectorAll('.panelVentana')];
   const pantallaChica = window.matchMedia('(max-width: 700px), (max-height: 500px)');
-  const celularVertical = window.matchMedia('(max-width: 700px) and (orientation: portrait)');
+  const celularVertical = pantallaCelularVertical;
   const panelGraficos = document.getElementById('panelGraficos');
   const panelAjustes = document.getElementById('panelAjustes');
   const pestanaGraficos = document.getElementById('pestanaGraficos');
@@ -459,7 +486,7 @@ function prepararPaneles() {
   function ajustarPaneles() {
     panelGraficos.classList.remove('ampliada');
     for (const panel of paneles) {
-      mostrarPanel(panel, !pantallaChica.matches || (panel === panelGraficos && celularVertical.matches));
+      mostrarPanel(panel, !pantallaChica.matches || panel === panelGraficos);
     }
     if (celularVertical.matches) {
       document.body.classList.remove('sinPaneles');
@@ -469,6 +496,10 @@ function prepararPaneles() {
       botonInterfaz.setAttribute('aria-label', 'Ocultar los paneles');
     }
     document.body.classList.remove('viendoAjustesMovil');
+    olvidarBanda();
+    vista.zoom = constrain(vista.zoom, zoomMinimo(), zoomMaximo);
+    centrarVistaEn(foco.x, foco.y);
+    mostrarZoom();
     actualizarPestanas();
     graficoV.resize();
     graficoDesfases.resize();
@@ -484,16 +515,33 @@ function prepararPaneles() {
     pestanaAjustes.setAttribute('aria-pressed', String(!graficosActivos));
   }
 
-  pestanaGraficos.addEventListener('click', () => {
-    if (panelGraficos.classList.contains('cerrada')) {
+  mostrarDesfases = () => {
+    if (!celularVertical.matches) return;
+    if (!panelGraficos.classList.contains('cerrada') && panelGraficos.classList.contains('ampliada')) return;
+    conservandoElCentro(() => {
       mostrarPanel(panelAjustes, false);
+      panelGraficos.classList.add('ampliada');
       mostrarPanel(panelGraficos, true);
-      panelGraficos.classList.remove('ampliada');
-    } else {
-      panelGraficos.classList.toggle('ampliada');
-      mostrarPanel(panelGraficos, true);
-    }
-    document.body.classList.remove('viendoAjustesMovil');
+      document.body.classList.remove('viendoAjustesMovil');
+    });
+    actualizarPestanas();
+    graficoV.resize();
+    graficoDesfases.resize();
+    actualizarGraficos();
+  };
+
+  pestanaGraficos.addEventListener('click', () => {
+    conservandoElCentro(() => {
+      if (panelGraficos.classList.contains('cerrada')) {
+        mostrarPanel(panelAjustes, false);
+        mostrarPanel(panelGraficos, true);
+        panelGraficos.classList.remove('ampliada');
+      } else {
+        panelGraficos.classList.toggle('ampliada');
+        mostrarPanel(panelGraficos, true);
+      }
+      document.body.classList.remove('viendoAjustesMovil');
+    });
     actualizarPestanas();
     graficoV.resize();
     graficoDesfases.resize();
@@ -502,10 +550,12 @@ function prepararPaneles() {
   });
 
   pestanaAjustes.addEventListener('click', () => {
-    panelGraficos.classList.remove('ampliada');
-    mostrarPanel(panelGraficos, false);
-    mostrarPanel(panelAjustes, true);
-    document.body.classList.add('viendoAjustesMovil');
+    conservandoElCentro(() => {
+      panelGraficos.classList.remove('ampliada');
+      mostrarPanel(panelGraficos, false);
+      mostrarPanel(panelAjustes, true);
+      document.body.classList.add('viendoAjustesMovil');
+    });
     actualizarPestanas();
     sonarHerramienta();
   });
@@ -513,10 +563,12 @@ function prepararPaneles() {
   for (const panel of paneles) {
     panel.querySelector('.panelCabecera').addEventListener('click', () => {
       const abrir = panel.classList.contains('cerrada');
-      if (abrir && pantallaChica.matches) {
-        for (const otro of paneles) if (otro !== panel) mostrarPanel(otro, false);
-      }
-      mostrarPanel(panel, abrir);
+      conservandoElCentro(() => {
+        if (abrir && pantallaChica.matches) {
+          for (const otro of paneles) if (otro !== panel) mostrarPanel(otro, false);
+        }
+        mostrarPanel(panel, abrir);
+      });
       if (abrir && panel.id === 'panelGraficos') {
         graficoV.resize();
         graficoDesfases.resize();
@@ -572,7 +624,7 @@ function keyPressed() {
   if (numero >= 1 && numero <= herramientas.length) elegirHerramienta(herramientas[numero - 1].nombre);
 }
 
-const duracionEntrada = 900;  // ms, igual que la transición de #inicio en el CSS
+const duracionEntrada = 900;
 
 function empezar() {
   const inicio = document.getElementById('inicio');
@@ -582,12 +634,7 @@ function empezar() {
   inicio.addEventListener('transitionend', ocultarInicio, { once: true });
   setTimeout(ocultarInicio, duracionEntrada + 200);
   document.body.classList.add('enJuego');
-  entrada = {
-    comenzo: millis(),
-    centro: { x: vista.x + width / vista.zoom / 2, y: vista.y + height / vista.zoom / 2 },
-    desde: vista.zoom,
-    hasta: vista.zoom,
-  };
+  entrada = { comenzo: millis(), desde: vista.zoom, hasta: vista.zoom };
   document.getElementById('guia').hidden = false;
 }
 
@@ -599,9 +646,10 @@ function confirmarPresentacion() {
 
 function avanzarEntrada() {
   const t = Math.min((millis() - entrada.comenzo) / duracionEntrada, 1);
-  const suave = 1 - Math.pow(1 - t, 3);  // arranca rápido y frena al final
+  const suave = 1 - Math.pow(1 - t, 3);
   vista.zoom = entrada.desde + (entrada.hasta - entrada.desde) * suave;
-  centrarVistaEn(entrada.centro.x, entrada.centro.y);
+  olvidarBanda();
+  centrarVistaEn(foco.x, foco.y);
   mostrarZoom();
   if (t === 1) {
     entrada = null;

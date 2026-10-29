@@ -59,6 +59,12 @@ input:focus-visible {
   border-color: var(--oscuro) var(--luz) var(--luz) var(--oscuro);
 }
 
+/* El hundido del borde solo no alcanza para ver de un vistazo qué escena o qué nivel está puesto. */
+.boton.activo {
+  background: var(--oscuro);
+  color: var(--amarillo);
+}
+
 /* Pantalla de juego */
 
 #juego {
@@ -166,6 +172,10 @@ body.enJuego.sinPaneles .monitor {
 
 .estado.sincronizado {
   color: var(--cumplido);
+}
+
+.estado.frustrada {
+  color: var(--amarillo);
 }
 
 .costado {
@@ -668,26 +678,32 @@ h1 .grande {
   margin-bottom: 8px;
 }
 
+/* La pista va encima del lienzo vacío, centrada, y desaparece cuando el gráfico tiene datos. */
 .pista {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 40px;
+  inset: 0;
+  display: grid;
+  place-items: center;
   margin: 0;
+  padding: 0 6px;
   text-align: center;
   font-size: 10px;
   color: var(--atenuado);
+  pointer-events: none;
 }
 
 @media (max-height: 500px) {
+  /* Acostado sobra ancho y falta alto: la rueda va en una columna y los dos gráficos en la otra,
+     así entra todo sin cortarse. Apilado en una sola columna no llegaba a entrar. */
   .monitor {
+    box-sizing: border-box;
     left: calc(10px + env(safe-area-inset-left));
-    bottom: calc(84px + env(safe-area-inset-bottom));
-    width: 210px;
-    max-height: calc(100dvh - 150px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    width: min(300px, calc(100vw - 20px));
+    max-height: calc(100dvh - 124px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
     overflow: auto;
     overscroll-behavior: contain;
-    padding: 6px 8px 2px;
+    padding: 6px 8px;
     border-width: 2px;
   }
 
@@ -696,13 +712,54 @@ h1 .grande {
     margin-bottom: 2px;
   }
 
+  .monitor .panelContenido {
+    display: grid;
+    grid-template-columns: 84px minmax(0, 1fr);
+    gap: 4px 8px;
+  }
+
+  .monitor .rueda {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: 4px;
+    margin: 0;
+  }
+
+  /* El canvas de la rueda es de 80x80: mostrarlo a otra medida parte los píxeles al ampliar. */
+  .monitor .rueda canvas {
+    width: 80px;
+    height: 80px;
+  }
+
+  .monitor .leyendaRueda h3 {
+    margin: 0;
+    font-size: 8px;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .monitor .leyendaRueda p {
+    display: none;
+  }
+
+  .monitor #bloqueV {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .monitor #bloqueDesfases {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
   .lienzoGrafico {
-    height: 52px;
-    margin-bottom: 4px;
+    height: 42px;
+    margin-bottom: 0;
   }
 
   .pista {
-    bottom: 24px;
     font-size: 9px;
   }
 }
@@ -714,180 +771,6 @@ h1 .grande {
   }
 }
 
-/* Celular vertical: datos compactos arriba, herramientas abajo y una sola ventana sobre el mapa. */
-@media (max-width: 700px) and (orientation: portrait) {
-  .arriba {
-    padding: calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) 24px calc(8px + env(safe-area-inset-left));
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    align-items: start;
-    gap: 6px 8px;
-  }
-
-  .titulo {
-    grid-column: 1 / 3;
-    margin: 0;
-    font-size: 14px;
-  }
-
-  .estado {
-    grid-column: 3;
-    grid-row: 1;
-    justify-self: end;
-    font-size: 10px;
-  }
-
-  .indicador {
-    grid-row: 2;
-    min-width: 0;
-    font-size: 13px;
-  }
-
-  .indicador small {
-    display: block;
-    margin: 2px 0 0;
-    overflow: hidden;
-    font-size: 9px;
-    line-height: 1.2;
-    white-space: normal;
-  }
-
-  .costado,
-  .monitor {
-    scrollbar-width: thin;
-    scrollbar-color: var(--luz) transparent;
-    -webkit-overflow-scrolling: touch;
-    top: auto;
-    right: calc(8px + env(safe-area-inset-right));
-    bottom: calc(78px + env(safe-area-inset-bottom));
-    left: calc(8px + env(safe-area-inset-left));
-    z-index: 3;
-    width: auto;
-    max-height: calc(100vh - 240px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-    max-height: calc(100dvh - 240px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-    overflow: auto;
-    overscroll-behavior: contain;
-    padding: 10px;
-    background: rgba(13, 14, 28, 0.96);
-    border: 2px solid;
-    border-color: var(--luz) var(--oscuro) var(--oscuro) var(--luz);
-    text-shadow: none;
-    pointer-events: auto;
-  }
-
-  .panelVentana:not(.cerrada) {
-    bottom: calc(132px + env(safe-area-inset-bottom));
-  }
-
-  .costado.cerrada,
-  .monitor.cerrada {
-    width: 132px;
-    padding: 0;
-    background: transparent;
-    border: 0;
-  }
-
-  .costado.cerrada {
-    right: auto;
-  }
-
-  .monitor.cerrada {
-    left: auto;
-  }
-
-  .panelVentana.cerrada {
-    z-index: 4;
-  }
-
-  .panelCabecera {
-    position: sticky;
-    top: 0;
-    z-index: 2;
-    min-height: 44px;
-    margin-bottom: 10px;
-  }
-
-  .boton {
-    min-height: 44px;
-  }
-
-  .control {
-    font-size: 11px;
-  }
-
-  .botones .boton {
-    min-height: 44px;
-    font-size: 11px;
-  }
-
-  .rueda {
-    justify-content: center;
-  }
-
-  .lienzoGrafico {
-    height: min(18vh, 130px);
-  }
-
-  .pista {
-    bottom: calc(min(18vh, 130px) / 2);
-  }
-
-  .botonInterfaz {
-    display: none;
-  }
-
-  .barra {
-    bottom: calc(10px + env(safe-area-inset-bottom));
-  }
-
-  .ranura {
-    width: 48px;
-    height: 48px;
-  }
-
-  .nombreHerramienta {
-    bottom: calc(132px + env(safe-area-inset-bottom));
-    max-width: calc(100vw - 24px);
-    overflow: hidden;
-    font-size: 10px;
-    text-align: center;
-    text-overflow: ellipsis;
-  }
-
-  .contenidoInicio {
-    width: calc(100% - 32px);
-    gap: 8px;
-  }
-
-  .obelisco {
-    width: clamp(104px, 21vh, 152px);
-  }
-
-  h1 .chico {
-    font-size: clamp(17px, 5vw, 22px);
-    letter-spacing: 2px;
-  }
-
-  h1 .grande {
-    font-size: clamp(39px, 12vw, 52px);
-  }
-
-  .pregunta {
-    margin-top: 4px;
-    font-size: clamp(15px, 4.5vw, 19px);
-  }
-
-  .formal {
-    max-width: 330px;
-    font-size: 10px;
-    line-height: 1.4;
-  }
-
-  .grandeBoton {
-    min-height: 48px;
-    margin-top: 4px;
-  }
-}
 
 .info {
   display: inline-grid;
@@ -929,6 +812,19 @@ h1 .grande {
 body.enJuego .botonGuia {
   opacity: 1;
 }
+
+/* Acostado quedaba suelto en el medio del mapa; va al lado del botón de los paneles.
+   Esta regla tiene que ir después de la base: con la misma especificidad, gana la última. */
+@media (max-height: 500px) {
+  .botonGuia {
+    left: auto;
+    right: calc(58px + env(safe-area-inset-right));
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    transform: none;
+    min-width: 40px;
+    min-height: 40px;
+  }
+}
 .guia, .ayudaEmergente {
   position: absolute; z-index: 6; padding: 12px; max-width: min(290px, calc(100vw - 40px));
   background: rgba(13, 14, 28, .97); border: 3px solid;
@@ -953,7 +849,6 @@ body.enJuego .botonGuia {
 [hidden] {
   display: none !important;
 }
-@media (max-width: 700px) { .botonGuia { bottom: calc(72px + env(safe-area-inset-bottom)); transform: translateX(145px); } }
 
 /* Lectura cómoda en escritorio; los tamaños compactos de celular quedan arriba. */
 @media (min-width: 701px) and (min-height: 501px) {
@@ -1002,147 +897,378 @@ body.enJuego .botonGuia {
   }
 }
 
-/* En celular, los gráficos quedan a la vista mientras el mapa sigue corriendo arriba. */
-@media (max-width: 700px) and (orientation: portrait) {
-  .monitor:not(.cerrada) {
-    top: auto;
-    bottom: calc(72px + env(safe-area-inset-bottom));
-    max-height: none;
-    height: 166px;
-    padding: 5px 8px 7px;
-    overflow: hidden;
-  }
-  .monitor > .panelCabecera {
-    min-height: 28px;
-    margin-bottom: 4px;
-    padding: 3px 8px;
-    font-size: 11px;
-  }
-  .monitor .panelContenido {
-    display: grid;
-    grid-template-columns: 66px minmax(0, 1fr);
-    grid-template-rows: 14px 43px 14px 43px;
-    gap: 2px 6px;
-  }
-  .monitor .rueda {
-    grid-column: 1;
-    grid-row: 1 / 5;
-    margin: 0;
-    align-items: center;
-  }
-  .monitor .rueda canvas {
-    width: 62px;
-    height: 62px;
-  }
-  .monitor .leyendaRueda {
-    display: none;
-  }
-  .monitor h3 {
-    grid-column: 2;
-    margin: 0;
-    font-size: 9px;
-    line-height: 1.3;
-  }
-  .monitor .lienzoGrafico {
-    grid-column: 2;
-    height: 43px;
-    margin: 0;
-  }
-  .monitor .pista {
-    display: none;
-  }
-
-  .monitor.ampliada:not(.cerrada) {
-    height: auto;
-    max-height: min(45dvh, 380px);
-    padding: 8px;
-    overflow: auto;
-  }
-  .monitor.ampliada .panelContenido {
-    display: block;
-  }
-  .monitor.ampliada .rueda {
-    justify-content: center;
-    margin-bottom: 8px;
-  }
-  .monitor.ampliada .rueda canvas {
-    width: 72px;
-    height: 72px;
-  }
-  .monitor.ampliada .leyendaRueda {
-    display: block;
-  }
-  .monitor.ampliada .lienzoGrafico {
-    height: min(16vh, 110px);
-    margin-bottom: 8px;
-  }
-  .monitor.ampliada .pista {
-    display: block;
-    bottom: 38px;
-  }
-  .nombreHerramienta {
-    bottom: calc(242px + env(safe-area-inset-bottom));
-  }
-}
-
 .pestanasMoviles {
   display: none;
 }
 
+/* ====================================================================
+   Celular vertical. Una sola distribución para toda la pantalla, en vez
+   de varios bloques que se pisaban entre sí.
+
+   De abajo hacia arriba: barra de herramientas, fila de pestañas y el
+   panel abierto. Lo que sobra arriba es la franja de mapa, que es lo que
+   se mira: gestos.js la calcula con bandaDelMapa() para centrar ahí la
+   avenida en vez de centrarla en el canvas, que sigue por detrás de todo.
+   ==================================================================== */
+
 @media (max-width: 700px) and (orientation: portrait) {
+  :root {
+    --barraAlto: 72px;      /* barra de herramientas más su margen de abajo */
+    --pestanasAlto: 50px;   /* fila de pestañas Gráficos / Ajustes */
+    --monitorAlto: 134px;   /* panel de gráficos en su forma compacta */
+    --margenCostado: 8px;
+  }
+
+  /* --- Datos de arriba: dos filas y nada que se monte --- */
+
+  .arriba {
+    padding: calc(6px + env(safe-area-inset-top)) calc(var(--margenCostado) + env(safe-area-inset-right)) 16px calc(var(--margenCostado) + env(safe-area-inset-left));
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+    gap: 4px 8px;
+  }
+
+  /* El título ya está en la pantalla de inicio; acá la pantalla la necesita el mapa. */
+  .titulo {
+    display: none;
+  }
+
+  .estado {
+    grid-column: 1 / 3;
+    grid-row: 1;
+    justify-self: start;
+    font-size: 11px;
+  }
+
+  /* El "?" del estado viaja en la misma fila que el estado, no suelto abajo. */
+  .arriba > .info {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: start;
+  }
+
+  /* minmax(0,1fr) más overflow: un valor largo se recorta en su columna en
+     lugar de escribirse encima del indicador de al lado. */
+  .indicador {
+    grid-row: 2;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 15px;
+  }
+
+  .indicador small {
+    display: block;
+    margin: 1px 0 0;
+    overflow: hidden;
+    font-size: 9px;
+    line-height: 1.2;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  /* --- Paneles de abajo --- */
+
+  .costado,
+  .monitor {
+    /* con el borde y el relleno adentro, --monitorAlto es el alto real que ocupa el panel y las
+       cuentas de abajo (cartel, franja de mapa) cierran */
+    box-sizing: border-box;
+    top: auto;
+    left: calc(var(--margenCostado) + env(safe-area-inset-left));
+    right: calc(var(--margenCostado) + env(safe-area-inset-right));
+    bottom: calc(var(--barraAlto) + var(--pestanasAlto) + env(safe-area-inset-bottom));
+    z-index: 3;
+    width: auto;
+    padding: 8px;
+    background: rgba(13, 14, 28, 0.96);
+    border: 2px solid;
+    border-color: var(--luz) var(--oscuro) var(--oscuro) var(--luz);
+    text-shadow: none;
+    pointer-events: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--luz) transparent;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* Las pestañas reemplazan a las cabeceras: un panel cerrado no deja rastro. */
+  .costado.cerrada,
+  .monitor.cerrada {
+    display: none;
+  }
+
+  .costado > .panelCabecera,
+  .monitor > .panelCabecera {
+    display: none;
+  }
+
+  .boton {
+    min-height: 44px;
+  }
+
+  .control {
+    font-size: 11px;
+  }
+
+  .botones .boton {
+    min-height: 44px;
+    font-size: 11px;
+    padding: 8px 4px;
+  }
+
+  /* --- Ajustes: entra entero, sin dejar las escenas abajo del corte --- */
+
+  .costado:not(.cerrada) {
+    max-height: min(46dvh, 380px);
+    overflow: auto;
+  }
+
+  .costado .panelContenido {
+    gap: 10px;
+  }
+
+  /* Los tres niveles de tránsito en una fila sola, y Mezclar junto a Reiniciar. */
+  #niveles {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .botones.acciones {
+    grid-template-columns: 1fr auto 1fr;
+  }
+
+  .botones.acciones #botonReiniciar {
+    grid-column: auto;
+  }
+
+  /* --- Gráficos compactos: la rueda grande y el potencial al lado --- */
+
+  .monitor:not(.cerrada) {
+    height: var(--monitorAlto);
+    max-height: none;
+    padding: 6px 8px;
+    overflow: hidden;
+  }
+
+  /* Todo lo de acá lleva :not(.ampliada): con #bloqueV estas reglas le ganaban por especificidad
+     a las del panel desplegado y le dejaban el gráfico con el alto del compacto. */
+  .monitor:not(.ampliada) .panelContenido {
+    display: grid;
+    grid-template-columns: 96px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
+    gap: 0 8px;
+    height: 100%;
+  }
+
+  .monitor:not(.ampliada) .rueda {
+    grid-column: 1;
+    grid-row: 1;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3px;
+    margin: 0;
+  }
+
+  .monitor:not(.ampliada) .rueda canvas {
+    width: 80px;
+    height: 80px;
+  }
+
+  .monitor:not(.ampliada) .leyendaRueda h3 {
+    margin: 0;
+    font-size: 8px;
+    line-height: 1.2;
+    text-align: center;
+  }
+
+  .monitor:not(.ampliada) .leyendaRueda p {
+    display: none;
+  }
+
+  /* El desfase por calle solo tiene algo que mostrar si se eligió una con
+     Graficar, así que en compacto cede todo el espacio al potencial V. */
+  .monitor:not(.ampliada) #bloqueDesfases {
+    display: none;
+  }
+
+  .monitor:not(.ampliada) #bloqueV {
+    grid-column: 2;
+    grid-row: 1;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .monitor:not(.ampliada) #bloqueV h3 {
+    margin: 0 0 2px;
+    font-size: 9px;
+  }
+
+  .monitor:not(.ampliada) #bloqueV .lienzoGrafico {
+    height: auto;
+    min-height: 0;
+    margin: 0;
+  }
+
+  /* --- Gráficos desplegados: entra todo, con leyenda --- */
+
+  .monitor.ampliada:not(.cerrada) {
+    height: auto;
+    max-height: min(52dvh, 400px);
+    padding: 10px;
+    overflow: auto;
+  }
+
+  .monitor.ampliada .panelContenido {
+    display: block;
+    height: auto;
+  }
+
+  .monitor.ampliada .rueda {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .monitor.ampliada .rueda canvas {
+    width: 80px;
+    height: 80px;
+  }
+
+  .monitor.ampliada .leyendaRueda h3 {
+    font-size: 11px;
+    text-align: left;
+  }
+
+  .monitor.ampliada .leyendaRueda p {
+    display: block;
+    font-size: 10px;
+  }
+
+  .monitor.ampliada #bloqueDesfases {
+    display: block;
+  }
+
+  .monitor.ampliada h3 {
+    margin: 0 0 4px;
+    font-size: 10px;
+  }
+
+  .monitor.ampliada .lienzoGrafico {
+    height: min(13dvh, 96px);
+    margin: 0 0 10px;
+  }
+
+  /* --- Pestañas, guía y herramientas --- */
+
   .pestanasMoviles {
     position: absolute;
     z-index: 5;
-    left: calc(8px + env(safe-area-inset-left));
-    right: calc(8px + env(safe-area-inset-right));
-    bottom: calc(72px + env(safe-area-inset-bottom));
+    left: calc(var(--margenCostado) + env(safe-area-inset-left));
+    right: calc(var(--margenCostado) + env(safe-area-inset-right));
+    bottom: calc(var(--barraAlto) + env(safe-area-inset-bottom));
+    /* la tercera columna queda vacía: es el hueco del botón de la guía */
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 48px;
     gap: 6px;
     opacity: 0;
     pointer-events: none;
   }
+
   body.enJuego .pestanasMoviles {
     opacity: 1;
     pointer-events: auto;
   }
+
   .pestanasMoviles .boton {
     min-height: 44px;
     padding: 6px;
     font-size: 11px;
   }
-  .costado.cerrada,
-  .monitor.cerrada {
+
+  /* Antes caía justo debajo de la fila de pestañas y no se podía tocar. */
+  .botonGuia {
+    z-index: 6;
+    left: auto;
+    right: calc(var(--margenCostado) + env(safe-area-inset-right));
+    bottom: calc(var(--barraAlto) + env(safe-area-inset-bottom));
+    transform: none;
+    width: 48px;
+    min-height: 44px;
+  }
+
+  .botonInterfaz {
     display: none;
   }
-  .costado:not(.cerrada),
-  .monitor:not(.cerrada) {
-    left: calc(8px + env(safe-area-inset-left));
-    right: calc(8px + env(safe-area-inset-right));
-    bottom: calc(122px + env(safe-area-inset-bottom));
-    width: auto;
+
+  .barra {
+    bottom: calc(10px + env(safe-area-inset-bottom));
   }
-  .costado:not(.cerrada) {
-    max-height: min(38dvh, 300px);
-    overflow: auto;
+
+  .ranura {
+    width: 48px;
+    height: 48px;
   }
-  .monitor:not(.cerrada) {
-    height: 120px;
-    padding: 6px 8px 8px;
-  }
-  .costado > .panelCabecera,
-  .monitor > .panelCabecera {
-    display: none;
-  }
-  .monitor.ampliada:not(.cerrada) {
-    height: auto;
-    max-height: min(44dvh, 360px);
-  }
+
+  /* El cartel de la herramienta se apoya sobre el panel abierto. */
   .nombreHerramienta {
-    bottom: calc(270px + env(safe-area-inset-bottom));
+    bottom: calc(var(--barraAlto) + var(--pestanasAlto) + var(--monitorAlto) + 6px + env(safe-area-inset-bottom));
+    max-width: calc(100vw - 24px);
+    overflow: hidden;
+    font-size: 10px;
+    text-align: center;
+    text-overflow: ellipsis;
   }
+
   body.viendoAjustesMovil .nombreHerramienta,
   body.graficosAmpliadosMovil .nombreHerramienta {
     opacity: 0;
+  }
+
+  /* Sin ancho fijo el globo se arma a la medida del texto y sale angosto y largo: en una pantalla
+     de 393 px quedaba de 197. */
+  .guia,
+  .ayudaEmergente {
+    width: min(300px, calc(100vw - 32px));
+    max-width: none;
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  /* --- Pantalla de inicio --- */
+
+  .contenidoInicio {
+    width: calc(100% - 32px);
+    gap: 8px;
+  }
+
+  .obelisco {
+    width: clamp(104px, 21vh, 152px);
+  }
+
+  h1 .chico {
+    font-size: clamp(17px, 5vw, 22px);
+    letter-spacing: 2px;
+  }
+
+  h1 .grande {
+    font-size: clamp(39px, 12vw, 52px);
+  }
+
+  .pregunta {
+    margin-top: 4px;
+    font-size: clamp(15px, 4.5vw, 19px);
+  }
+
+  .formal {
+    max-width: 330px;
+    font-size: 10px;
+    line-height: 1.4;
+  }
+
+  .grandeBoton {
+    min-height: 48px;
+    margin-top: 4px;
   }
 }

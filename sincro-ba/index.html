@@ -6,7 +6,7 @@
   <meta name="viewport"
     content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Sincronización Porteña</title>
-  <link rel="stylesheet" href="css/estilo.css?v=sync14">
+  <link rel="stylesheet" href="css/estilo.css?v=sync25">
   <meta name="theme-color" content="#14162a">
   <script src="vendor/p5.min.js?v=1"></script>
 </head>
@@ -19,7 +19,7 @@
       <div class="titulo">Sincronización Porteña</div>
       <div class="indicador"><span id="valorV">0.00</span><small>Potencial V <button class="info" type="button"
             data-ayuda="V" aria-label="Ayuda sobre potencial V">?</button></small></div>
-      <div class="indicador"><span id="valorSincro">–</span><small>Tardó en sincronizar</small></div>
+      <div class="indicador"><span id="valorSincro">–</span><small>Sincronizó en</small></div>
       <div class="indicador"><span id="valorTiempo">0 s</span><small>Tiempo</small></div>
       <div class="estado" id="estado" role="status" aria-live="polite">Sin semáforos</div><button class="info"
         type="button" data-ayuda="sincronizado" aria-label="Ayuda sobre sincronización">?</button>
@@ -30,6 +30,10 @@
         <span>Ajustes</span><span class="marcaPanel" aria-hidden="true">−</span>
       </button>
       <div class="panelContenido" id="contenidoAjustes">
+        <div class="control">
+          <span class="fila"><span>Escenas</span></span>
+          <div class="botones columna" id="escenarios"></div>
+        </div>
         <div class="zoom">Zoom <button class="boton" type="button" id="menosZoom" aria-label="Alejar">−</button> <span
             id="valorZoom">×2</span> <button class="boton" type="button" id="masZoom" aria-label="Acercar">+</button>
         </div>
@@ -49,10 +53,6 @@
           <button class="info" type="button" data-ayuda="mezclar" aria-label="Ayuda sobre Mezclar">?</button>
           <button class="boton" type="button" id="botonReiniciar">Reiniciar escena</button>
         </div>
-        <div class="control">
-          <span class="fila"><span>Escenas</span></span>
-          <div class="botones columna" id="escenarios"></div>
-        </div>
       </div>
     </aside>
 
@@ -68,11 +68,16 @@
             <p>Cada punto es una cuadra. Azul arriba: objetivo cumplido.</p>
           </div>
         </div>
-        <h3>Potencial V</h3>
-        <div class="lienzoGrafico"><canvas id="graficoV"></canvas></div>
-        <h3>Desfase φj − φi y su objetivo Δji</h3>
-        <div class="lienzoGrafico"><canvas id="graficoDesfases"></canvas></div>
-        <p class="pista" id="pistaDesfases">Elegí una calle con Graficar</p>
+        <div class="bloqueGrafico" id="bloqueV">
+          <h3>Potencial V</h3>
+          <div class="lienzoGrafico"><canvas id="graficoV"></canvas></div>
+        </div>
+        <div class="bloqueGrafico" id="bloqueDesfases">
+          <h3>Desfase φj − φi y su objetivo Δji</h3>
+          <div class="lienzoGrafico"><canvas id="graficoDesfases"></canvas>
+            <p class="pista" id="pistaDesfases">Elegí una calle con Graficar</p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -116,15 +121,15 @@
   <script src="js/modelo.js"></script>
   <script src="js/calles.js"></script>
   <script src="js/escenarios.js?v=sync6"></script>
-  <script src="js/plano.js?v=sync3"></script>
+  <script src="js/plano.js?v=sync4"></script>
   <script src="js/autos.js?v=sync4"></script>
   <script src="js/paleta.js"></script>
   <script src="js/dibujo.js?v=sync4"></script>
   <script src="js/graficos.js?v=sync3"></script>
-  <script src="js/gestos.js?v=sync4"></script>
+  <script src="js/gestos.js?v=sync8"></script>
   <script src="js/sonido.js?v=a745ad76c8e7"></script>
-  <script src="js/ayuda.js?v=sync3"></script>
-  <script src="js/principal.js?v=sync20"></script>
+  <script src="js/ayuda.js?v=sync5"></script>
+  <script src="js/principal.js?v=sync29"></script>
 </body>
 
 </html>

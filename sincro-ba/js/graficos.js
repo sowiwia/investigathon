@@ -1,8 +1,3 @@
-// Gráficos con Chart.js: el potencial V en el tiempo y el desfase de hasta 4 calles elegidas,
-// cada uno con su objetivo como línea punteada.
-
-// Cuatro muestras por segundo hacen que la línea avance con fluidez incluso a velocidad normal.
-// Se conservan los últimos 200 segundos para limitar el trabajo de Chart.js en celulares.
 const segundosEntreMuestras = 0.25;
 const maximoDeMuestras = 800;
 const coloresDeSeries = ['#ff7eb6', '#9be564', '#c792ea', '#7fdbca'];
@@ -10,9 +5,9 @@ const coloresDeSeries = ['#ff7eb6', '#9be564', '#c792ea', '#7fdbca'];
 let graficoV;
 let graficoDesfases;
 let muestrasDeV = [];
-let series = [];  // { calle, color, datos: [{ x, y }], ultimo, objetivo }
+let series = [];
 let proximaMuestra = 0;
-let marcaDeSincronizacion = null;  // en qué segundo todas las calles quedaron azules
+let marcaDeSincronizacion = null;
 
 function crearGraficos() {
   Chart.defaults.font.family = "'Monocraft', monospace";
@@ -100,7 +95,6 @@ function registrarMuestra(tiempo, red, fases) {
 
 function actualizarGraficos() {
   const deV = [linea(muestrasDeV, '#eceaf6')];
-  // la línea vertical marca el momento en que V dejó de bajar: lo que tardó en sincronizar
   if (marcaDeSincronizacion !== null && muestrasDeV.length > 0) {
     const valores = muestrasDeV.map(m => m.y);
     const alto = Math.max(...valores);

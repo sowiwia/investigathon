@@ -182,4 +182,28 @@ QUnit.module('red para el modelo', hooks => {
     assert.false(redCumplida(crearPlano(), armarRed(crearPlano(), parametrosDePrueba), [], 0.1),
       'una red vacía no cuenta como sincronizada');
   });
+
+  // OSM a veces parte una calzada en dos tramos entre las mismas esquinas.
+  QUnit.test('dos cuadras entre las mismas esquinas dejan un solo vecino', assert => {
+    const esquinas = [
+      { osm: 1, x: 0, y: 0, semaforo: true },
+      { osm: 2, x: 16, y: 0, semaforo: true },
+    ];
+    const tramo = nombre => ({
+      a: 0, b: 1, nombre, clase: 'avenida', mano: 'ab', largo: 130,
+      puntos: [[0, 0], [16, 0]],
+    });
+    cargarCiudad({
+      mapa: { ancho: 320, alto: 180, metrosPorPixel: 8.11 },
+      esquinas, calles: [tramo('Calzada norte'), tramo('Calzada sur')],
+    });
+
+    const plano = planoCon(0, 1);
+    assert.strictEqual(plano.calles.length, 2, 'las dos cuadras entran a la red');
+    assert.strictEqual(plano.esquinas.length, 2, 'y comparten sus dos esquinas');
+
+    const red = armarRed(plano, parametrosDePrueba);
+    assert.deepEqual(red.vecinos[0], [1], 'la esquina 0 ve a la 1 una sola vez');
+    assert.deepEqual(red.vecinos[1], [0], 'y la 1 a la 0 también');
+  });
 });

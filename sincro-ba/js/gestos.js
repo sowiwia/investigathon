@@ -1,17 +1,56 @@
-// En pantalla táctil, arrastrar mueve el mapa; con mouse, Calle permite pintar al arrastrar.
-
 const vista = { zoom: 2, x: 0, y: 0 };
 
 const zoomMaximo = 5;
 const pasoDeZoom = 1.25;
 
-// El zoom más lejano es el que hace que el mundo tape la pantalla entera: con menos quedarían
-// bordes de fondo vacío alrededor del mapa.
-function zoomMinimo() {
-  if (window.matchMedia('(max-width: 700px) and (orientation: portrait)').matches) {
-    return Math.max(width / anchoMundo, (height - 240) / altoMundo);
+const pantallaCelularVertical = window.matchMedia('(max-width: 700px) and (orientation: portrait)');
+const pantallaChicaDeJuego = window.matchMedia('(max-width: 700px), (max-height: 500px)');
+
+function esCelularVertical() {
+  return pantallaCelularVertical.matches;
+}
+
+function esPantallaChica() {
+  return pantallaChicaDeJuego.matches;
+}
+
+const altoMinimoDeBanda = 48;
+
+let bandaGuardada = null;
+
+function olvidarBanda() {
+  bandaGuardada = null;
+}
+
+function bandaDelMapa() {
+  if (bandaGuardada) return bandaGuardada;
+  bandaGuardada = medirBanda();
+  return bandaGuardada;
+}
+
+function medirBanda() {
+  if (!esCelularVertical()) return { desde: 0, hasta: height };
+  const arriba = document.querySelector('.arriba');
+  const desde = arriba ? Math.max(0, arriba.getBoundingClientRect().bottom - 16) : 0;
+  let hasta = height;
+  for (const elemento of document.querySelectorAll('.pestanasMoviles, .panelVentana, .barra')) {
+    const estilo = getComputedStyle(elemento);
+    if (estilo.display === 'none' || estilo.opacity === '0') continue;
+    const borde = elemento.getBoundingClientRect().top;
+    if (borde > desde) hasta = Math.min(hasta, borde);
   }
-  return Math.max(width / anchoMundo, height / altoMundo);
+  if (hasta - desde < altoMinimoDeBanda) return { desde: 0, hasta: height };
+  return { desde, hasta };
+}
+
+function medioDeLaBanda() {
+  const banda = bandaDelMapa();
+  return (banda.desde + banda.hasta) / 2;
+}
+
+function zoomMinimo() {
+  const banda = bandaDelMapa();
+  return Math.max(width / anchoMundo, (banda.hasta - banda.desde) / altoMundo);
 }
 
 function aMundo(x, y) {
@@ -19,16 +58,33 @@ function aMundo(x, y) {
 }
 
 function limitarVista() {
+  const banda = bandaDelMapa();
   const visibleX = width / vista.zoom;
-  const visibleY = height / vista.zoom;
+  const visibleY = (banda.hasta - banda.desde) / vista.zoom;
   vista.x = visibleX >= anchoMundo ? (anchoMundo - visibleX) / 2 : constrain(vista.x, 0, anchoMundo - visibleX);
-  vista.y = visibleY >= altoMundo ? (altoMundo - visibleY) / 2 : constrain(vista.y, 0, altoMundo - visibleY);
+  const yDeLaBanda = vista.y + banda.desde / vista.zoom;
+  const limitada = visibleY >= altoMundo
+    ? (altoMundo - visibleY) / 2
+    : constrain(yDeLaBanda, 0, altoMundo - visibleY);
+  vista.y = limitada - banda.desde / vista.zoom;
 }
 
 function centrarVistaEn(x, y) {
   vista.x = x - width / vista.zoom / 2;
-  vista.y = y - height / vista.zoom / 2;
+  vista.y = y - medioDeLaBanda() / vista.zoom;
   limitarVista();
+}
+
+function centroDeLaVista() {
+  return aMundo(width / 2, medioDeLaBanda());
+}
+
+function conservandoElCentro(cambiar) {
+  const centro = centroDeLaVista();
+  cambiar();
+  olvidarBanda();
+  vista.zoom = constrain(vista.zoom, zoomMinimo(), zoomMaximo);
+  centrarVistaEn(centro.x, centro.y);
 }
 
 function mostrarZoom() {
@@ -45,7 +101,7 @@ function cambiarZoom(nuevo, x, y) {
 }
 
 const punteros = new Map();
-let toque = null;  // el dedo o botón que usa la herramienta: { id, x, y, movido }
+let toque = null;
 let pellizco = null;
 let arrastre = null;
 let ruedaAcumulada = 0;
@@ -67,7 +123,6 @@ function alApoyar(e) {
   if (e.pointerType === 'mouse' && e.button !== 0) {
     arrastre = { x: e.offsetX, y: e.offsetY };
   } else if (punteros.size === 2) {
-    // un segundo dedo cancela lo que estaba haciendo el primero, para que el pellizco no dibuje
     toque = null;
     empezarPellizco();
   } else if (punteros.size === 1) {
@@ -151,7 +206,6 @@ function empezarPellizco() {
   pellizco = { distancia, zoom: vista.zoom, punto: aMundo(medio.x, medio.y) };
 }
 
-// El punto del mundo que quedó entre los dedos sigue entre los dedos mientras se mueven.
 function seguirPellizco() {
   if (!pellizco || pellizco.distancia < 1) return;
   const { medio, distancia } = dedos();
@@ -162,7 +216,6 @@ function seguirPellizco() {
   mostrarZoom();
 }
 
-// Los touchpads mandan muchos eventos chicos: se acumulan hasta sumar un paso de zoom.
 function alGirarRueda(e) {
   e.preventDefault();
   ruedaAcumulada += e.deltaY;

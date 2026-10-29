@@ -1,4 +1,3 @@
-// Colores del mundo pixel art. Los de la interfaz están en css/estilo.css con los mismos valores.
 const paleta = {
   fondo: '#14162a',
   asfalto: '#34364a',
