@@ -36,8 +36,11 @@ de archivos estáticos.
 - **Desordenar y reiniciar.** `Mezclar` reparte fases al azar para ver cómo la
   red vuelve al equilibrio; `Reiniciar escena` la deja como al principio.
 - **Seguir la sincronización.** El indicador `Potencial V` baja a medida que
-  los semáforos se ordenan, y `Tardó en sincronizar` marca el momento en que
-  todas las cuadras quedan azules.
+  los semáforos se ordenan, y `Sincronizó en` marca el momento en que todas
+  las cuadras quedan azules. El estado tiene tres valores: `Sincronizado`,
+  `Equilibrio frustrado` (el potencial tocó su mínimo pero no es cero, porque
+  los desfases objetivo de un circuito no pueden cumplirse todos a la vez) y
+  `Sin sincronizar`.
 - **Ver los gráficos.** El panel muestra el potencial en el tiempo, el desfase
   de hasta cuatro calles contra su objetivo y una rueda con una cuadra por
   punto.
@@ -79,7 +82,7 @@ Parámetros por defecto:
 | Parámetro | Valor |
 |---|---|
 | Ciclo del semáforo `T` | 90 s (lo fija cada escena) |
-| Velocidad de marcha `v` | 40 km/h |
+| Velocidad de marcha `v` | 50 km/h |
 | Verde de la calle principal `s` | 0,5 del ciclo |
 | Peso base `K` | 0,5 por calle y 5 por avenida |
 | Acople por nivel de tránsito | ×0,4 (bajo), ×1 (medio), ×2 (alto) |
