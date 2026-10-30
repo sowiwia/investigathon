@@ -27,3 +27,14 @@ El archivo resultante se almacena en `sesiones/`.
 | Archivo | Tema |
 |---|---|
 | `sesiones/conversacion_kuramoto_semaforos.txt` | Traducción del paper de Nishikawa (2003), sincronización tipo Kuramoto y su aplicación a semáforos |
+| `sesiones/conversacion_mapas_y_circuito.txt` | Elección del circuito y de los sensores sobre los conteos de BA Data, distancias entre cruces, mapas y grafo del Microcentro a partir de OpenStreetMap |
+
+
+## Qué hizo la IA y qué hicimos nosotros
+
+La especificación de la simulación, los notebooks de análisis y sus figuras,
+la redacción del informe y del poster y la elección de los parámetros del
+modelo son nuestros. La IA tradujo el paper, buscó la bibliografía, eligió el
+circuito y los sensores sobre el dataset de conteos, generó los mapas y el
+grafo del Microcentro y ayudó a escribir y corregir el código de la interfaz de `sincro-ba` según nuestra
+especificación y elementos visuales.

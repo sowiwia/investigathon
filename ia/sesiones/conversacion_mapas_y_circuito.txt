@@ -1,0 +1,95 @@
+CONVERSACIÓN: MAPAS DE SENSORES, CIRCUITO Y GRAFO DEL MICROCENTRO
+
+YO:
+te paso el dataset de volumen vehicular de ba data
+(volumen_vehicular_2024_detalle_semanal.csv, semana del 2 al 8 de marzo de
+2024). necesitamos elegir un recorrido real que esté cubierto por sensores,
+para que los flujos de la simulación salgan de datos y no de la nada.
+armá un circuito con los sensores que haya.
+
+CLAUDE:
+Revisé el archivo: 231.191 filas, 16 columnas, 95 ubicaciones de conteo, las
+24 horas y una sola semana. Cada fila es un tipo de vehículo contado en una
+posta durante un cuarto de hora, con sentido (`norte`, `sur`, `este`,
+`oeste`), carriles y tipo de vía.
+
+Para elegir el recorrido filtré días hábiles (`LUN` a `VIE`) y la franja de
+las 8, que es la hora pico de la mañana, y me quedé con las postas de la
+zona centro. Hay dos recorridos que cierran bien:
+
+1. Un circuito cerrado con cuatro sensores, uno por lado y cada uno en un
+   sentido distinto:
+
+   | Sensor | Sentido |
+   |---|---|
+   | Entre Ríos 678 | norte |
+   | Belgrano 324 | este |
+   | Paseo Colón 753 | sur |
+   | Independencia 1784 | oeste |
+
+   Entre Ríos → Belgrano → Paseo Colón → Independencia. Es un circuito de
+   una mano por lado, que es justo el caso donde el paper muestra más
+   diferencia entre las dos variantes de acople, y además cierra, así que
+   tiene frustración: los desfases objetivo de la vuelta no pueden
+   cumplirse todos a la vez.
+
+2. Av. Córdoba hacia el oeste, que tiene 12 sensores entre las alturas 1147
+   y 4570, todos en el mismo sentido. Es el caso de onda verde pura.
+
+Los dos juntos cubren las dos situaciones interesantes, así que propongo
+quedarse con ambos: uno es la escena de circuito, el otro la de corredor.
+
+YO:
+bien, los dos. ahora necesito las distancias entre cruces semaforizados de
+cada recorrido, con openstreetmap.
+
+CLAUDE:
+Te armo dos CSV, una fila por cruce, ordenados a lo largo del recorrido,
+con la distancia al inicio y la distancia al cruce anterior en metros:
+
+- `semaforos_circuito_distancias.csv`: 46 cruces (incluido el punto de
+  inicio) y 5.059 m de recorrido.
+- `semaforos_cordoba_oeste.csv`: 35 cruces y 4.361 m.
+
+La distancia al cruce anterior es la que importa, porque es la que define
+el desfase objetivo de cada cuadra:
+
+  Δ = 2π · L / (v · T)
+
+Dos aclaraciones sobre cómo los armé:
+
+- Los cruces salen de los nodos con semáforo de OpenStreetMap sobre el
+  trazado de cada avenida. Los medí sobre la geometría de la calle, no en
+  línea recta entre esquinas, así que las curvas están contadas.
+- Dejé las coordenadas en los CSV aunque los notebooks no las usen, por si
+  después hace falta rehacer un mapa.
+
+Limitación importante: OSM no es el relevamiento oficial. Puede faltar un
+semáforo o sobrar uno que ya no está. Para contar cruces y medir tramos
+alcanza, pero no sirve como fuente de la programación real (ciclos, splits,
+offsets), que no encontré publicada en ningún dataset abierto.
+
+YO:
+hacé los mapas uno del circuito con los cuatro sensores marcados, uno de
+córdoba oeste y uno con todos los puntos de conteo del centro.
+
+CLAUDE:
+Listos los tres:
+
+- `mapa_circuito.png`: el circuito, 5,06 km y 45 cruces, con los cuatro
+  sensores marcados y el sentido de cada lado.
+- `mapa_cordoba_oeste.png`: Av. Córdoba hacia el oeste, 4,42 km, 35
+  semáforos y los 12 sensores.
+- `mapa_puntos_conteo_centro.png`: todos los puntos de conteo de la zona
+  centro, con los cuatro del circuito en negrita para que se distingan del
+  resto.
+
+Criterios de dibujo: fondo de calles en gris claro para que el recorrido
+resalte, un color por sentido en el circuito, y las alturas de los sensores
+escritas al lado del punto. Las tres imágenes tienen la misma escala
+tipográfica y la misma paleta, así quedan consistentes en el informe.
+
+Si en el poster van en chico, decime y rehago las versiones con el texto
+más grande y menos calles de fondo: a tamaño reducido las etiquetas de los
+sensores se pierden.
+
