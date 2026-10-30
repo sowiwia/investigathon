@@ -48,12 +48,12 @@ mano (25 cruces, `Δ = 3π/8`) los desfases van al objetivo `−Δ`. Con doble m
 porque los dos sentidos tiran en direcciones opuestas.
 
 **3. Grilla con `K_perp = 0`.** Corrida de referencia sobre 3 calles de 10
-cruces, con `K_av = 10`, `Δ = 2π/8` y 50 condiciones iniciales. Con las
+cruces, con `K_av = 10`, `Δ = 2π/8` y 200 condiciones iniciales. Con las
 perpendiculares apagadas las tres calles se coordinan por separado. Imprime las
 listas `V0_K0` y `Vfin_K0` para comparar con el barrido.
 
 **4. Barrido de `K_perp`.** Lo central del notebook, 20 valores de `K_perp`
-entre `0` y `50`, 50 condiciones iniciales cada uno, integrados en lote con
+entre `0` y `50`, 200 condiciones iniciales cada uno, integrados en lote con
 `BDF` y el patrón de dispersión del jacobiano. El gráfico es
 `σ = V_final / V_inicial` contra `K_perp`, con una curva por condición inicial y
 la envolvente de mínimos. `σ` es peor cuando las perpendiculares pesan parecido
